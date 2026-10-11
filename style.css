@@ -2301,3 +2301,18 @@ input[type="date"] {
         margin-right: 5px;
     }
 }
+
+/* 見出しの文字サイズを統一 */
+.medication-record-heading h2,
+.medication-management-title {
+    font-size: 20px !important;
+    font-weight: 700;
+}
+
+/* スマホ版も同じ大きさに統一 */
+@media screen and (max-width: 600px) {
+    .medication-record-heading h2,
+    .medication-management-title {
+        font-size: 18px !important;
+    }
+}
