@@ -1659,3 +1659,41 @@ label[for="ocrText"] {
 #tokenFullQuestion{white-space:pre-wrap}
 @media(max-width:600px){.clock-token-row{justify-content:space-between}.token-panel{padding:16px 12px}.token-toggle{font-size:12px}}
 @media print{#tokenHome,#quiz,.token-toggle{display:none!important}}
+
+
+/* ========================================
+   スマホ版：日付入力欄のはみ出し防止
+======================================== */
+
+input[type="date"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* 日付入力欄を含むレイアウトの幅調整 */
+@media (max-width: 600px) {
+  input[type="date"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Flex・Grid内で子要素が縮められるようにする */
+  .form-row,
+  .date-row,
+  .date-range,
+  .form-group {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .form-row > *,
+  .date-row > *,
+  .date-range > *,
+  .form-group > * {
+    min-width: 0;
+  }
+}
