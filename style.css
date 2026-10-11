@@ -2316,3 +2316,146 @@ input[type="date"] {
         font-size: 18px !important;
     }
 }
+
+/* ========================================
+   服薬記録一覧：タイトルとホームボタン
+======================================== */
+
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#history .history-page-heading h1 {
+  grid-column: 2;
+  margin: 0;
+  text-align: center;
+}
+
+#history .history-page-heading button {
+  grid-column: 3;
+  justify-self: end;
+  padding: 9px 12px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+
+/* ========================================
+   服薬記録一覧：検索欄
+======================================== */
+
+.history-search-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  background: #e2efd9;
+  border-radius: 16px;
+}
+
+#history .history-search-panel h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #386c2b;
+}
+
+.history-search-panel label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-weight: bold;
+}
+
+.history-search-panel input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 16px;
+}
+
+.history-search-dates,
+.history-search-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.history-search-actions button {
+  min-width: 0;
+}
+
+.history-search-count {
+  margin: 0;
+  text-align: right;
+  font-weight: bold;
+  color: #386c2b;
+}
+
+
+/* ========================================
+   お薬の管理：検索欄
+======================================== */
+
+#drugs .drug-search-panel {
+  margin: 0 0 20px;
+  background: #edf5ff;
+}
+
+#drugs .drug-search-panel h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #326db4;
+}
+
+#drugs .drug-search-panel .history-search-count {
+  color: #326db4;
+}
+
+
+/* ========================================
+   スマートフォン対応
+======================================== */
+
+@media (max-width: 600px) {
+
+  #history .history-page-heading {
+    grid-template-columns:
+      minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  #history .history-page-heading h1 {
+    font-size: clamp(17px, 5vw, 23px);
+    white-space: nowrap;
+  }
+
+  #history .history-page-heading button {
+    font-size: 11px;
+    padding: 8px 6px;
+  }
+
+  .history-search-panel {
+    padding: 12px;
+  }
+
+  .history-search-dates {
+    gap: 8px;
+  }
+
+  .history-search-panel input {
+    padding: 9px 5px;
+  }
+
+  #drugs .drug-search-panel {
+    padding: 12px;
+  }
+
+  #drugs .drug-search-panel input {
+    min-width: 0;
+    width: 100%;
+  }
+}

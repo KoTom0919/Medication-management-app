@@ -190,21 +190,65 @@ function showPage(pageId) {
    時計
 ======================================== */
 
+
+/* ========================================
+   グラスモーフィズム時計
+======================================== */
+
 function updateClock() {
-  const d = new Date();
-  const days = [
-    "日", "月", "火", "水", "木", "金", "土"
+  const now = new Date();
+
+  const weekdays = [
+    "日曜日", "月曜日", "火曜日",
+    "水曜日", "木曜日", "金曜日", "土曜日"
   ];
 
-  $("clock").textContent =
-    `${d.getFullYear()}年${d.getMonth() + 1}月` +
-    `${d.getDate()}日（${days[d.getDay()]}）\n` +
-    `${String(d.getHours()).padStart(2, "0")}:` +
-    `${String(d.getMinutes()).padStart(2, "0")}:` +
-    `${String(d.getSeconds()).padStart(2, "0")}`;
+  const pad = (number) =>
+    String(number).padStart(2, "0");
+
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  const seconds = pad(now.getSeconds());
+
+  const weekday = weekdays[now.getDay()];
+
+  const dateText =
+    `${now.getFullYear()}年` +
+    `${now.getMonth() + 1}月` +
+    `${now.getDate()}日（${weekday[0]}）`;
+
+  const weekdayElement =
+    document.getElementById("clockWeekday");
+
+  const timeElement =
+    document.getElementById("clockHourMinute");
+
+  const secondsElement =
+    document.getElementById("clockSeconds");
+
+  const dateElement =
+    document.getElementById("clockDate");
+
+  if (weekdayElement) {
+    weekdayElement.textContent = weekday;
+  }
+
+  if (timeElement) {
+    timeElement.textContent =
+      `${hours}:${minutes}`;
+  }
+
+  if (secondsElement) {
+    secondsElement.textContent = `:${seconds}`;
+  }
+
+  if (dateElement) {
+    dateElement.textContent = dateText;
+  }
 }
 
 /* ========================================
+
    薬がなくなる日の計算
 ======================================== */
 
@@ -456,6 +500,7 @@ function validDrug(drug) {
   if (
     !Number.isInteger(drug.remaining) ||
     drug.remaining < 0
+
   ) {
     return "残数は0以上の整数で入力してください。";
   }
@@ -645,6 +690,11 @@ function toggleDrugPast(id) {
    お薬一覧の表示
 ======================================== */
 
+function clearDrugSearch() {
+  $("drugSearchForm")?.reset();
+  renderDrugs();
+}
+
 function renderDrugs() {
   const root = $("drugRows");
 
@@ -699,25 +749,41 @@ function renderDrugs() {
       remaining <= 0;
 
     if (showPast) {
+      
       return isPast;
     }
 
     return !isPast;
   });
 
+  // 処方日と薬剤名で絞り込み（現在／過去の区分は維持）
+  const start = $("drugSearchStart")?.value || "";
+  const end = $("drugSearchEnd")?.value || "";
+  const query = ($("drugSearchName")?.value || "").trim().toLocaleLowerCase("ja-JP");
+  const filteredDrugs = drugs.filter(drug => {
+    const prescribed = String(drug.prescribed || "").slice(0, 10);
+    const name = String(drug.name || "").toLocaleLowerCase("ja-JP");
+    return (!start || (prescribed && prescribed >= start)) &&
+      (!end || (prescribed && prescribed <= end)) &&
+      (!query || name.includes(query));
+  });
+
+  const count = $("drugSearchCount");
+  if (count) count.textContent = `${filteredDrugs.length}件表示 / 全${drugs.length}件`;
+
   // 表を初期化
   root.replaceChildren();
 
   // 対象のお薬がない場合
-  if (drugs.length === 0) {
+  if (filteredDrugs.length === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
 
     cell.colSpan = 11;
 
-    cell.textContent = showPast
-      ? "過去のお薬はありません。"
-      : "現在のお薬はありません。";
+    cell.textContent = drugs.length === 0
+      ? (showPast ? "過去のお薬はありません。" : "現在のお薬はありません。")
+      : "検索条件に一致するお薬はありません。";
 
     row.appendChild(cell);
     root.appendChild(row);
@@ -733,7 +799,7 @@ function renderDrugs() {
   }
 
   // お薬を1件ずつ表示
-  drugs.forEach(drug => {
+  filteredDrugs.forEach(drug => {
     const row = document.createElement("tr");
 
     const remaining = Number(drug.remaining) || 0;
@@ -940,7 +1006,7 @@ async function recognizeDrugImage() {
 
   $("ocrStatus").textContent =
     "日本語OCRを実行しています…";
-
+    
   try {
     if (!ocrWorker) {
       ocrWorker =
@@ -1194,6 +1260,7 @@ function parseMedicationTimings(text) {
     if (source.startsWith("夜間", i)) {
       pending = [];
       i++;
+      
       continue;
     }
 
@@ -1435,6 +1502,7 @@ function applyOCRToDrugForm() {
   if (indexes.length !== 1) {
     alert(
       "反映する薬剤を1件だけ選択してください。"
+      
     );
     return;
   }
@@ -1457,116 +1525,25 @@ function applyOCRToDrugForm() {
   $("drugId").value = "";
   $("drugName").value = result.name;
   $("strength").value = result.strength;
-
   $("drugType").value = result.type;
   $("total").value = result.total;
-
-  $("prescriptionDays").value =
-    result.days ?? "";
-
-  $("prnCount").value =
-    result.prnCount ?? "";
-
-  $("prnTiming").value =
-    result.prnTiming;
-
+  $("prescriptionDays").value = result.days ?? "";
+  $("prnCount").value = result.prnCount ?? "";
+  $("prnTiming").value = result.prnTiming;
   setTimingFields(result.timings);
 
-  $("isPast").checked = false;
-
   remainingManuallyEdited = false;
-
   updateDrugTypeFields();
-
   calculateInitialRemaining(true);
 
-  $("drugName").scrollIntoView({
+  $("drugForm").scrollIntoView({
     behavior: "smooth",
-    block: "center"
+    block: "start"
   });
 }
 
 /* ========================================
-   OCR一括登録
-======================================== */
-
-function makeReviewInput(
-  labelText,
-  field,
-  value,
-  type = "text"
-) {
-  const label =
-    document.createElement("label");
-
-  label.textContent = labelText;
-
-  const input =
-    document.createElement("input");
-
-  input.type = type;
-  input.dataset.field = field;
-  input.value = value ?? "";
-
-  if (type === "number") {
-    input.min = "0";
-    input.step = "1";
-  }
-
-  label.append(input);
-  return label;
-}
-
-/* ========================================
-   OCR一括登録のキャンセル
-======================================== */
-
-function cancelBatchRegistration() {
-  batchDraft = [];
-
-  // 旧HTMLの確認画面が残っていても対応
-  const review = $("batchReview");
-  const items = $("batchReviewItems");
-
-  if (review) {
-    review.hidden = true;
-  }
-
-  if (items) {
-    items.replaceChildren();
-  }
-}
-
-/* ========================================
-   同一薬剤の重複判定
-======================================== */
-
-function isDuplicateDrug(candidate) {
-  const normalize = value =>
-    String(value ?? "")
-      .normalize("NFKC")
-      .replace(/\s+/g, "")
-      .toLowerCase();
-
-  return data.drugs.some(drug => {
-    return (
-      normalize(drug.name) ===
-        normalize(candidate.name) &&
-
-      normalize(drug.strength) ===
-        normalize(candidate.strength) &&
-
-      (isPrn(drug) ? "prn" : "regular") ===
-        candidate.type &&
-
-      String(drug.prescribed || "") ===
-        String(candidate.prescribed || "")
-    );
-  });
-}
-
-/* ========================================
-   OCRから薬剤を一括登録する準備
+   OCR複数薬剤の一括登録
 ======================================== */
 
 function prepareBatchRegistration() {
@@ -1579,84 +1556,50 @@ function prepareBatchRegistration() {
 
   const blocks = getOCRBlocks();
   const drugs = [];
+  const warnings = [];
   const errors = [];
 
   for (const index of indexes) {
-    const block = blocks[index];
-
-    if (!block) continue;
-
-    const result =
-      extractPrescriptionDetails(block);
-
-    const type =
-      result.type === "prn"
-        ? "prn"
-        : "regular";
-
-    const timings =
-      type === "regular"
-        ? unique(result.timings)
-        : [];
-
-    const days =
-      type === "regular"
-        ? result.days
-        : null;
-
-    const prnCount =
-      type === "prn"
-        ? result.prnCount
-        : null;
-
-    const remaining =
-      type === "prn"
-        ? Math.max(
-            0,
-            Number(prnCount) || 0
-          )
-        : Math.max(
-            0,
-            (Number(days) || 0) *
-              timings.length
-          );
+    const parsed =
+      extractPrescriptionDetails(blocks[index]);
 
     const drug = {
-      name: result.name,
-      strength: result.strength,
-      type,
-      total:
-        type === "regular"
-          ? result.total
-          : "",
-      prescriptionDays: days,
-      prnCount,
-      timings,
-      prnTiming:
-        type === "prn"
-          ? result.prnTiming
-          : "",
+      name: parsed.name,
+      strength: parsed.strength,
+      type: parsed.type,
+      total: parsed.total,
+      prescriptionDays: parsed.days,
+      prnCount: parsed.prnCount,
+      timings: parsed.timings,
+      prnTiming: parsed.prnTiming,
       prescribed: "",
       endDate: "",
-      remaining,
-      isPast: remaining === 0
+      remaining:
+        parsed.type === "prn"
+          ? (parsed.prnCount || 0)
+          : (parsed.days || 0) * parsed.timings.length,
+      isPast: false
     };
 
-    const error = validDrug(drug);
+    if (parsed.warnings.length) {
+      warnings.push(
+        `${drug.name}：${parsed.warnings.join("、")}`
+      );
+    }
 
-    if (error) {
+    if (!drug.name || !drug.strength) {
       errors.push(
-        `${drug.name || "薬剤名不明"}：${error}`
+        `${drug.name || "薬剤名不明"}：薬剤名または規格が不明`
       );
       continue;
     }
 
     if (
-      type === "regular" &&
+      drug.type === "regular" &&
       (
-        !Number.isInteger(days) ||
-        days < 1 ||
-        !timings.length
+        !Number.isInteger(drug.prescriptionDays) ||
+        drug.prescriptionDays <= 0 ||
+        !drug.timings.length
       )
     ) {
       errors.push(
@@ -1666,10 +1609,10 @@ function prepareBatchRegistration() {
     }
 
     if (
-      type === "prn" &&
+      drug.type === "prn" &&
       (
-        !Number.isInteger(prnCount) ||
-        prnCount < 1 ||
+        !Number.isInteger(drug.prnCount) ||
+        drug.prnCount <= 0 ||
         !drug.prnTiming
       )
     ) {
@@ -1685,6 +1628,297 @@ function prepareBatchRegistration() {
   if (errors.length) {
     alert(
       "読み取り結果を確認してください。" +
+      "登録できない薬があります：\n" +
+      errors.join("\n")
+    );
+    return;
+  }
+
+  if (!drugs.length) {
+    alert("登録する薬剤がありません。");
+    return;
+  }
+
+  if (warnings.length) {
+    const proceed = confirm(
+      "以下の確認事項があります。\n\n" +
+      warnings.join("\n") +
+      "\n\nこの内容で登録を進めますか？"
+    );
+
+    if (!proceed) return;
+  }
+
+  batchDraft = drugs;
+  openPrescriptionDateDialog(drugs, "batch");
+}
+
+/* ========================================
+   OCR登録キャンセル
+======================================== */
+
+function cancelBatchRegistration() {
+  batchDraft = [];
+}
+
+/* ========================================
+   処方日入力ダイアログ
+======================================== */
+
+function openPrescriptionDateDialog(
+  drugs,
+  source = "manual"
+) {
+  const title = $("modalTitle");
+  const body = $("modalBody");
+
+  title.textContent = "処方日を入力";
+
+  body.replaceChildren();
+
+  const description =
+    document.createElement("p");
+
+  description.textContent =
+    `${drugs.length}件のお薬を登録します。`;
+
+  body.appendChild(description);
+
+  const label = document.createElement("label");
+  label.textContent = "処方日";
+
+  const input = document.createElement("input");
+  input.type = "date";
+  input.value = today();
+  input.required = true;
+
+  label.appendChild(input);
+  body.appendChild(label);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "orange";
+  button.textContent = "登録する";
+
+  button.onclick = () => {
+    if (!input.value) {
+      alert("処方日を入力してください。");
+      return;
+    }
+
+    const prescribed = input.value;
+
+    const prepared = drugs.map(drug => {
+      const copy = {
+        ...drug,
+        prescribed
+      };
+
+      copy.endDate =
+        copy.type === "prn"
+          ? ""
+          : getEndDate(
+              prescribed,
+              copy.prescriptionDays
+            );
+
+      return copy;
+    });
+
+    commitDrugRegistration(prepared, source);
+  };
+
+  body.appendChild(button);
+
+  $("modal").classList.remove("hidden");
+}
+
+/* ========================================
+   薬剤登録の確定
+======================================== */
+
+function commitDrugRegistration(
+  drugs,
+  source = "manual"
+) {
+  const editId =
+    source === "manual"
+      ? $("drugId").value
+      : "";
+
+  for (const drug of drugs) {
+    if (editId) {
+      const index = data.drugs.findIndex(
+        item => String(item.id) === String(editId)
+      );
+
+      if (index >= 0) {
+        data.drugs[index] = {
+          ...data.drugs[index],
+          ...drug,
+          id: editId
+        };
+      }
+    } else {
+      data.drugs.push({
+        ...drug,
+        id: createId()
+      });
+    }
+  }
+
+  if (!saveData()) return;
+
+  closeModal();
+  cancelBatchRegistration();
+  renderSlots();
+  renderDrugs();
+  showPage("drugs");
+}
+
+/* ========================================
+   OCRテキスト編集時の更新
+======================================== */
+
+function setupOCRTextListener() {
+  const input = $("ocrText");
+
+  if (!input) return;
+
+  input.addEventListener("input", () => {
+    updateOCRLines();
+  });
+}
+
+/* ========================================
+   服薬記録用の補助関数
+======================================== */
+
+function findDrugById(id) {
+  return data.drugs.find(
+    drug => String(drug.id) === String(id)
+  );
+}
+
+function findDrugByName(name) {
+  return data.drugs.find(
+    drug => drug.name === name
+  );
+}
+
+/* ========================================
+   服薬セット
+======================================== */
+
+function getRegularDrugs() {
+  return data.drugs.filter(drug => {
+    const remaining = Number(drug.remaining) || 0;
+
+    return (
+      !isPrn(drug) &&
+      !drug.isPast &&
+      !drug.manuallyPast &&
+      remaining > 0
+    );
+  });
+}
+
+function getPrnDrugs() {
+  return data.drugs.filter(drug => {
+    const remaining = Number(drug.remaining) || 0;
+
+    return (
+      isPrn(drug) &&
+      !drug.isPast &&
+      !drug.manuallyPast &&
+      remaining > 0
+    );
+  });
+}
+
+function getMedicationSlots() {
+  const groups = new Map();
+
+  for (const drug of getRegularDrugs()) {
+    for (const timing of normalizedTimings(drug)) {
+      if (!groups.has(timing)) {
+        groups.set(timing, []);
+      }
+
+      groups.get(timing).push(drug);
+    }
+  }
+
+  return [...groups.entries()].map(
+    ([timing, drugs]) => ({
+      timing,
+      drugs
+    })
+  );
+}
+
+/* ========================================
+   服薬セットの表示
+======================================== */
+
+function renderSlots() {
+  const root = $("slots");
+
+  if (!root) return;
+
+  root.replaceChildren();
+
+  const slots = getMedicationSlots();
+
+  if (!slots.length) {
+    root.textContent =
+      "現在登録されている定期薬はありません。";
+    return;
+  }
+
+  for (const slot of slots) {
+    const card = document.createElement("div");
+    card.className = "slot-card";
+
+    const heading = document.createElement("h3");
+    heading.textContent = slot.timing;
+
+    card.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = "slot-drugs";
+
+    for (const drug of slot.drugs) {
+      const item = document.createElement("div");
+      item.className = "slot-drug";
+
+      const name = document.createElement("span");
+      name.textContent =
+        `${drug.name} ${drug.strength}`;
+
+      item.appendChild(name);
+
+      list.appendChild(item);
+    }
+
+    card.appendChild(list);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "greenbtn";
+    button.textContent = "服薬を記録する";
+
+    button.onclick = () => {
+      recordMedicationSlot(slot.timing);
+    };
+
+    card.appendChild(button);
+    root.appendChild(card);
+  }
+}
+
+/* ========================================
+
       "登録できない薬があります：\n" +
       errors.join("\n")
     );
@@ -1934,7 +2168,7 @@ function showDrugRegistrationReview() {
 
       p.textContent = line;
       p.style.margin = "3px 0";
-
+      
       item.append(p);
     });
 
@@ -2184,7 +2418,7 @@ function openMedicationSlot(
 
   $("modalTitle").textContent =
     `${timing} の服薬記録`;
-
+    
   const body = $("modalBody");
   body.replaceChildren();
 
@@ -2328,60 +2562,59 @@ function recordMedication(timing, ids) {
    服薬履歴
 ======================================== */
 
-function renderHistory() {
-  const root =
-    $("historyList");
+function clearHistorySearch() {
+  $("historySearchForm").reset();
+  renderHistory();
+}
 
+function renderHistory() {
+  const root = $("historyList");
   root.replaceChildren();
 
-  const history = [
-    ...data.history
-  ].sort((a, b) =>
-    new Date(
-      b.timestamp || b.date || 0
-    ) -
-    new Date(
-      a.timestamp || a.date || 0
-    )
-  );
+  const start = $("historyStart")?.value || "";
+  const end = $("historyEnd")?.value || "";
+  const drugQuery = ($("historyDrugName")?.value || "").trim().toLocaleLowerCase("ja-JP");
+
+  const history = [...data.history]
+    .filter(item => {
+      const dateValue = item.timestamp || item.date || "";
+      const parsedDate = new Date(dateValue);
+      // ISO文字列の日付部分はUTCのため、服薬日時は端末の現地日付で判定する。
+      const localDate = Number.isNaN(parsedDate.getTime())
+        ? String(dateValue).slice(0, 10)
+        : [parsedDate.getFullYear(), String(parsedDate.getMonth() + 1).padStart(2, "0"), String(parsedDate.getDate()).padStart(2, "0")].join("-");
+      const name = String(item.drugName || item.name || "薬剤").toLocaleLowerCase("ja-JP");
+      return (!start || localDate >= start) &&
+        (!end || localDate <= end) &&
+        (!drugQuery || name.includes(drugQuery));
+    })
+    .sort((a, b) => new Date(b.timestamp || b.date || 0) - new Date(a.timestamp || a.date || 0));
+
+  const count = $("historySearchCount");
+  if (count) count.textContent = `${history.length}件表示 / 全${data.history.length}件`;
 
   if (!history.length) {
-    root.textContent =
-      "服薬記録はありません。";
+    root.textContent = data.history.length ? "検索条件に一致する服薬記録はありません。" : "服薬記録はありません。";
     return;
   }
 
   for (const item of history) {
-    const card =
-      document.createElement("div");
-
-    const text =
-      document.createElement("p");
-
+    const card = document.createElement("div");
+    const text = document.createElement("p");
     text.textContent =
-      `${formatDateTime(
-        item.timestamp || item.date
-      )}　` +
+      `${formatDateTime(item.timestamp || item.date)}　` +
       `${item.drugName || item.name || "薬剤"}　` +
       `${item.timing || ""}` +
       `${item.canceled ? "（取消済み）" : ""}`;
-
     card.append(text);
 
     if (!item.canceled) {
-      const button =
-        document.createElement("button");
-
+      const button = document.createElement("button");
       button.type = "button";
-      button.textContent =
-        "記録を取り消す";
-
-      button.onclick = () =>
-        cancelMedication(item.id);
-
+      button.textContent = "記録を取り消す";
+      button.onclick = () => cancelMedication(item.id);
       card.append(button);
     }
-
     root.append(card);
   }
 }
@@ -2436,6 +2669,7 @@ function cancelMedication(id) {
     renderHistory();
     renderSlots();
     renderDrugs();
+    
   }
 }
 
@@ -2686,6 +2920,7 @@ function finishMemoDrag(event) {
   const state = memoDragState;
 
   if (!state || state.pointerId !== event.pointerId) {
+    
     return;
   }
 
@@ -2936,6 +3171,7 @@ function deleteRange() {
 
   if (
     !confirm(
+      
       "指定期間のメモをすべて削除しますか？"
     )
   ) {
@@ -3436,7 +3672,7 @@ function revokeTokenForCanceledMedication(awardId) {
   if (award.perDrug) {
     const previouslyRevoked =
       Number(award.revokedCount) || 0;
-
+      
     if (canceledCount > previouslyRevoked) {
       t.earned = Math.max(
         0,
