@@ -2459,3 +2459,49 @@ input[type="date"] {
     width: 100%;
   }
 }
+
+/* ========================================
+   スマホ表示の調整
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+  /* 服薬記録の確認ページのタイトル */
+  #history h1,
+  #history h2,
+  #historyPage h1,
+  #historyPage h2 {
+    font-size: 24px;
+    line-height: 1.4;
+  }
+
+  /* ホームへボタン */
+  #history button,
+  #historyPage button {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  /* 開始日・終了日の入力欄 */
+  input[type="date"] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* 日付入力欄を含む要素 */
+  #historySearchForm,
+  #drugSearchForm {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #historySearchForm *,
+  #drugSearchForm * {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+}
