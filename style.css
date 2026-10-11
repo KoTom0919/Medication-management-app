@@ -1697,3 +1697,86 @@ input[type="date"] {
     min-width: 0;
   }
 }
+
+/* ========================================
+   日付入力欄のはみ出し修正・確定版
+======================================== */
+
+/* 1. メモ一覧：表示期間 */
+#filter {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#filter > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#filter input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* 2. 処方日入力：モーダル */
+.dialog {
+  min-width: 0;
+  max-width: calc(100vw - 30px);
+  box-sizing: border-box;
+}
+
+#modalBody {
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#modalBody > *,
+.prescription-date-box,
+.registration-review,
+.registration-review-item {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* 3. 処方日入力欄 */
+#prescriptionDateInput,
+#batchPrescriptionDate,
+#modalBody input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* 4. スマートフォン用 */
+@media screen and (max-width: 600px) {
+
+  #filter,
+  #modalBody,
+  .prescription-date-box,
+  .registration-review {
+    min-width: 0;
+  }
+
+  #filter input[type="date"],
+  #modalBody input[type="date"] {
+    font-size: 16px;
+    padding: 8px 4px;
+  }
+
+  .dialog {
+    width: 100%;
+    padding: 14px;
+  }
+}
