@@ -51,12 +51,17 @@
             </header>
 
             <div class="panel green">
-                <h2>服薬記録</h2>
+
+                <div class="medication-record-heading">
+                    <h2>服薬記録</h2>
+
+                    <button type="button" class="wide greenbtn" onclick="showPage('history')">
+                        記録を確認する
+                    </button>
+                </div>
+
                 <div id="slots" class="slots"></div>
 
-                <button type="button" class="wide greenbtn" onclick="showPage('history')">
-                    記録を確認する
-                </button>
             </div>
 
             <div class="panel blue">
