@@ -3216,83 +3216,21 @@ function closeModal() {
 
 let TOKEN_QUESTIONS = [];
 
-async function loadTokenQuestions() {
-  const questions = [
-    {
-      id: "p1",
-      field: "心理学",
-      difficulty: "初級",
-      question: "行動の直後に好ましい結果が生じ、その行動の頻度が増えることを何というか？",
-      answers: ["正の強化"],
-      explanation: "正の強化とは、行動の後に好ましい刺激が加わり、その行動が増えることです。"
-    },
-    {
-      id: "p2",
-      field: "心理学",
-      difficulty: "初級",
-      question: "人が周囲の多数派の意見に合わせて、自分の判断や行動を変える現象を何というか？",
-      answers: ["同調", "同調行動"],
-      explanation: "同調は集団の規範や他者の意見に合わせて判断や行動を変える現象です。"
-    },
-    {
-      id: "p3",
-      field: "心理学",
-      difficulty: "中級",
-      question: "古典的条件づけで、一度消去された条件反応が、時間を置くと再び現れる現象を何というか？",
-      answers: ["自発的回復"],
-      explanation: "自発的回復は、消去後に時間を置くと条件反応が再出現する現象です。"
-    },
-    {
-      id: "m1",
-      field: "医学",
-      difficulty: "初級",
-      question: "血液を全身へ送り出すポンプの役割を果たす臓器は何か？",
-      answers: ["心臓"],
-      explanation: "心臓は収縮と拡張を繰り返し、血液を肺と全身に循環させます。"
-    },
-    {
-      id: "m2",
-      field: "医学",
-      difficulty: "初級",
-      question: "血液中の酸素を運ぶ赤血球内のタンパク質を何というか？",
-      answers: ["ヘモグロビン"],
-      explanation: "ヘモグロビンは赤血球に含まれ、酸素と結合して運搬するタンパク質です。"
-    },
-    {
-      id: "m3",
-      field: "医学",
-      difficulty: "中級",
-      question: "血糖値が高くなったとき、膵臓から分泌されて血糖値を下げるホルモンは何か？",
-      answers: ["インスリン"],
-      explanation: "インスリンは膵臓のβ細胞から分泌され、細胞への糖の取り込みなどを促します。"
-    },
-    {
-      id: "d1",
-      field: "薬学",
-      difficulty: "初級",
-      question: "薬を飲んでから血液中に取り込まれる過程を、薬物動態では何というか？",
-      answers: ["吸収"],
-      explanation: "吸収は投与部位から薬物が血液などの循環系へ移る過程です。"
-    },
-    {
-      id: "d2",
-      field: "薬学",
-      difficulty: "中級",
-      question: "薬の血中濃度が半分になるまでの時間を何というか？",
-      answers: ["半減期", "消失半減期", "血中半減期"],
-      explanation: "消失半減期は、血中薬物濃度が半分になるまでの時間です。"
-    },
-    {
-      id: "d3",
-      field: "薬学",
-      difficulty: "初級",
-      question: "薬を決められた用法や用量に沿って使うことを何というか？",
-      answers: ["服薬遵守", "アドヒアランス"],
-      explanation: "服薬遵守は指示に沿って服薬することです。アドヒアランスは患者が治療方針に納得し主体的に参加する意味合いも含みます。"
-    }
-  ];
 
-  if (!Array.isArray(questions) || !questions.length) {
+async function loadTokenQuestions() {
+  const response = await fetch("./question.json", {
+  cache: "no-store"
+});
+
+  if (!response.ok) {
+    throw new Error(
+      `問題ファイルを取得できませんでした（HTTP ${response.status}）`
+    );
+  }
+
+  const questions = await response.json();
+
+  if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error("問題が登録されていません。");
   }
 
@@ -3325,7 +3263,6 @@ async function loadTokenQuestions() {
 
   TOKEN_QUESTIONS = questions;
 }
-
 
 const TOKEN_INITIAL_REVEALS = 8;
 
