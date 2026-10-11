@@ -3304,10 +3304,59 @@ function initTokenState() {
 
   const t = data.token;
 
-  if (!Array.isArray(t.order) || !t.order.length) {
-    t.order = tokenShuffle(
-      TOKEN_QUESTIONS.map(q => q.id)
-    );
+  
+  // 問題ファイルと保存済みの出題順序を同期する
+  const currentIds = TOKEN_QUESTIONS.map(q => q.id);
+  const validIds = new Set(currentIds);
+
+  const oldOrder = Array.isArray(t.order) ? t.order : [];
+  const oldIndex = Number.isInteger(t.index) ? t.index : 0;
+  const currentId = oldOrder[oldIndex];
+
+  const seenIds = new Set();
+
+  // 現在も存在する問題だけ残す
+  const retainedOrder = oldOrder.filter(id => {
+    if (!validIds.has(id) || seenIds.has(id)) {
+      return false;
+    }
+
+    seenIds.add(id);
+    return true;
+  });
+
+  // 新しく追加された問題を取得する
+  const addedIds = currentIds.filter(
+    id => !seenIds.has(id)
+  );
+
+  const orderChanged =
+    retainedOrder.length !== oldOrder.length ||
+    addedIds.length > 0;
+
+  if (orderChanged || !oldOrder.length) {
+
+    // 既存の順番を維持し、新しい問題を末尾に追加する
+    t.order = retainedOrder.length
+      ? [...retainedOrder, ...tokenShuffle(addedIds)]
+      : tokenShuffle(currentIds);
+
+    // 現在の問題を維持する
+    const updatedIndex = t.order.indexOf(currentId);
+
+    if (updatedIndex >= 0) {
+      t.index = updatedIndex;
+    } else {
+
+      // 現在の問題が削除された場合
+      t.index = Math.min(
+        Math.max(oldIndex, 0),
+        t.order.length - 1
+      );
+
+      t.opened = [];
+      t.solved = false;
+    }
   }
 
   if (!Array.isArray(t.opened)) {
@@ -3651,7 +3700,7 @@ async function initializeApp() {
 
     alert(
       "クイズの問題を読み込めませんでした。" +
-      "questions.json を同じフォルダに配置し、" +
+      "question.json を同じフォルダに配置し、" +
       "GitHub Pagesから開いてください。\n" +
       error.message
     );
