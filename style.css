@@ -1,4 +1,11 @@
 
+/* 服薬管理アプリ スタイルシート（整理版）
+   元ファイル: style(20261011-083412).css
+   既存のCSS優先順位とメディアクエリを維持するため、
+   上書きルールは削除せず保持しています。
+*/
+
+
 /* ========================================
    基本設定
 ======================================== */
@@ -459,7 +466,6 @@ td button {
   background: #f8caca;
 }
 
-
 /* ========================================
    お薬登録フォーム
 ======================================== */
@@ -495,7 +501,6 @@ td button {
   line-height: 1.7;
   margin: 5px 0 10px;
 }
-
 
 /* ========================================
    定期薬・頓服薬の切り替え
@@ -533,7 +538,6 @@ td button {
 #prnFields {
   border-left: 5px solid #e59c37;
 }
-
 
 /* ========================================
    服薬タイミング入力欄
@@ -578,7 +582,6 @@ td button {
   background: #fffdf6;
 }
 
-
 /* ========================================
    薬がなくなる日
 ======================================== */
@@ -596,7 +599,6 @@ td button {
   width: 100%;
   min-height: 45px;
 }
-
 
 /* ========================================
    残数入力欄
@@ -630,7 +632,6 @@ td button {
   width: 100%;
   min-height: 45px;
 }
-
 
 /* ========================================
    OCR画像選択
@@ -733,7 +734,6 @@ td button {
   border-color: #4778c7;
 }
 
-
 /* ========================================
    OCR一括登録の確認画面
 ======================================== */
@@ -820,7 +820,6 @@ td button {
   margin-bottom: 0;
 }
 
-
 /* ========================================
    服薬セット設定・履歴
 ======================================== */
@@ -850,7 +849,6 @@ td button {
   overflow-wrap: anywhere;
 }
 
-
 /* ========================================
    メモ
 ======================================== */
@@ -868,7 +866,6 @@ td button {
 }
 
 .memoCard {
-
   position: relative;
   background: #ffffff;
   border: 1px solid var(--navy);
@@ -886,8 +883,8 @@ td button {
   height: 28px;
   background: linear-gradient(
     135deg,
-    rgba(255,255,255,0.9) 0%,
-    rgba(255,255,255,0.9) 49%,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 49%,
     #d2dbe9 50%,
     #d2dbe9 100%
   );
@@ -929,7 +926,6 @@ td button {
   color: #b00000;
 }
 
-
 /* ========================================
    メモ表示期間
 ======================================== */
@@ -958,7 +954,6 @@ td button {
 #filter button:last-of-type {
   background: #65a6d9;
 }
-
 
 /* ========================================
    モーダル
@@ -1027,7 +1022,6 @@ td button {
   justify-content: center;
 }
 
-
 /* ========================================
    非表示
 ======================================== */
@@ -1037,7 +1031,6 @@ td button {
 #filter.hidden {
   display: none !important;
 }
-
 
 /* ========================================
    メモ一覧：ドラッグして位置交換
@@ -1079,7 +1072,6 @@ td button {
   outline-offset: 2px;
 }
 
-
 /* ========================================
    メモの背景色選択
 ======================================== */
@@ -1110,7 +1102,6 @@ td button {
 .memo-color-option:hover {
   filter: brightness(0.97);
 }
-
 
 /* ========================================
    新規メモの背景色選択
@@ -1152,7 +1143,6 @@ td button {
 .memo-new-color select:has(option[value="pink"]:checked) {
   background-color: #fce5ec;
 }
-
 
 /* ========================================
    ホーム・メモ画面の入力欄を下部固定
@@ -1199,7 +1189,6 @@ td button {
   min-height: 40px;
 }
 
-
 /* ========================================
    OCR認識文字欄の非表示
 ======================================== */
@@ -1208,7 +1197,6 @@ td button {
 label[for="ocrText"] {
   display: none !important;
 }
-
 
 /* ========================================
    タブレット
@@ -1229,7 +1217,6 @@ label[for="ocrText"] {
   }
 
 }
-
 
 /* ========================================
    スマートフォン
@@ -1263,8 +1250,7 @@ label[for="ocrText"] {
   }
 
   .slots {
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -1299,7 +1285,6 @@ label[for="ocrText"] {
 
   .drug-type-fields h3 {
     font-size: 18px;
-    
   }
 
   .remaining-field {
@@ -1352,8 +1337,7 @@ label[for="ocrText"] {
   }
 
   #filter {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
@@ -1436,7 +1420,6 @@ label[for="ocrText"] {
 
 }
 
-
 /* ========================================
    小さいスマートフォン
 ======================================== */
@@ -1473,7 +1456,6 @@ label[for="ocrText"] {
   }
 
 }
-
 
 /* ========================================
    印刷
@@ -1524,100 +1506,103 @@ label[for="ocrText"] {
 /* 処方日の入力欄 */
 #prescriptionDateInput,
 #batchPrescriptionDate {
-    width: 100%;
-    min-height: 48px;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #203457;
-    border-radius: 8px;
-    background: #ffffff;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #203457;
+  border-radius: 8px;
+  background: #ffffff;
 }
 
 /* 処方日の入力ボックス */
 .prescription-date-box {
-    display: grid;
-    gap: 14px;
-    padding: 18px;
-    background: #f5f9ff;
-    border: 1px solid #9bb6d5;
-    border-radius: 12px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  background: #f5f9ff;
+  border: 1px solid #9bb6d5;
+  border-radius: 12px;
 }
 
 .prescription-date-box label {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 /* 登録内容の確認画面 */
 .registration-review {
-    display: grid;
-    gap: 16px;
-    padding: 18px;
-    background: #ffffff;
-    border: 1px solid #9bb6d5;
-    border-radius: 14px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #9bb6d5;
+  border-radius: 14px;
 }
 
 /* 薬剤ごとの確認欄 */
 .registration-review-item {
-    padding: 15px;
-    background: #f5f9ff;
-    border: 1px solid #9bb6d5;
-    border-radius: 10px;
+  padding: 15px;
+  background: #f5f9ff;
+  border: 1px solid #9bb6d5;
+  border-radius: 10px;
 }
 
 .registration-review-item h3 {
-    margin: 0 0 12px;
-    color: #192e52;
+  margin: 0 0 12px;
+  color: #192e52;
 }
 
 /* 処方日・薬がなくなる日の表示 */
 .registration-date-info {
-    display: grid;
-    gap: 8px;
-    padding: 12px;
-    background: #e7f3e1;
-    border: 1px solid #8fbd7e;
-    border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  border-radius: 8px;
 }
 
 /* 登録確定・キャンセルボタン */
 .registration-review-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .registration-review-actions button {
-    min-height: 48px;
-    padding: 12px 20px;
+  min-height: 48px;
+  padding: 12px 20px;
 }
 
 /* スマートフォン */
 @media screen and (max-width: 600px) {
 
-    .prescription-date-box,
-    .registration-review {
-        padding: 12px;
-    }
+  .prescription-date-box,
+  .registration-review {
+    padding: 12px;
+  }
 
-    .registration-review-item {
-        padding: 12px;
-    }
+  .registration-review-item {
+    padding: 12px;
+  }
 
-    .registration-review-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .registration-review-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-    .registration-review-actions button {
-        min-width: 0;
-        padding: 10px 6px;
-        font-size: 14px;
-    }
+  .registration-review-actions button {
+    min-width: 0;
+    padding: 10px 6px;
+    font-size: 14px;
+  }
 }
 
-/* 薬剤名の詳細ページリンク */
+/* ========================================
+   薬剤名の詳細ページリンク
+======================================== */
+
 .drug-detail-link {
   color: #1765b3;
   text-decoration: underline;
@@ -1636,30 +1621,167 @@ label[for="ocrText"] {
   border-radius: 3px;
 }
 
-/* 学習クイズ（既存レイアウトから独立） */
-.clock-token-row{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,36px)}
-.clock-token-row #clock{min-width:0}
-.token-toggle{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:bold;font-size:13px;cursor:pointer;flex-shrink:0}
-.token-toggle input{position:absolute;opacity:0;width:1px;height:1px}
-.token-switch{width:54px;height:30px;background:#a4acb6;border-radius:20px;position:relative;transition:background .15s}
-.token-switch:before{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:white;transition:transform .15s}
-.token-toggle input:checked+.token-switch{background:#438b63}
-.token-toggle input:checked+.token-switch:before{transform:translateX(24px)}
-.token-toggle input:focus-visible+.token-switch{outline:3px solid #ffc000;outline-offset:3px}
-.token-panel{background:#eef4fc;border:1px solid #a9c2e4}
-.token-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-.token-masked{display:flex;flex-wrap:wrap;gap:3px;margin:18px 0;padding:14px 9px;background:white;border-radius:10px;min-height:95px;align-content:flex-start}
-.token-char{width:clamp(18px,5vw,24px);height:29px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold;border-radius:2px;white-space:nowrap}
-.token-char.closed{background:#202020;color:#202020}
-.token-char.open{background:transparent;color:#111}
-#tokenAnswerArea{display:grid;gap:10px;margin-top:20px}
-#tokenAnswerArea input{width:100%;font-size:16px}
-#tokenAnswerFeedback{min-height:1.5em}
-#tokenSolution{background:#fff;border-radius:12px;padding:16px;margin-top:18px}
-#tokenFullQuestion{white-space:pre-wrap}
-@media(max-width:600px){.clock-token-row{justify-content:space-between}.token-panel{padding:16px 12px}.token-toggle{font-size:12px}}
-@media print{#tokenHome,#quiz,.token-toggle{display:none!important}}
+/* ========================================
+   学習クイズ
+======================================== */
 
+.clock-token-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 4vw, 36px);
+}
+
+.clock-token-row #clock {
+  min-width: 0;
+}
+
+.token-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.token-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.token-switch {
+  width: 54px;
+  height: 30px;
+  background: #a4acb6;
+  border-radius: 20px;
+  position: relative;
+  transition: background .15s;
+}
+
+.token-switch:before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  transition: transform .15s;
+}
+
+.token-toggle input:checked + .token-switch {
+  background: #438b63;
+}
+
+.token-toggle input:checked + .token-switch:before {
+  transform: translateX(24px);
+}
+
+.token-toggle input:focus-visible + .token-switch {
+  outline: 3px solid #ffc000;
+  outline-offset: 3px;
+}
+
+.token-panel {
+  background: #eef4fc;
+  border: 1px solid #a9c2e4;
+}
+
+.token-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.token-masked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 18px 0;
+  padding: 14px 9px;
+  background: white;
+  border-radius: 10px;
+  min-height: 95px;
+  align-content: flex-start;
+}
+
+.token-char {
+  width: clamp(18px, 5vw, 24px);
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.token-char.closed {
+  background: #202020;
+  color: #202020;
+}
+
+.token-char.open {
+  background: transparent;
+  color: #111;
+}
+
+#tokenAnswerArea {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#tokenAnswerArea input {
+  width: 100%;
+  font-size: 16px;
+}
+
+#tokenAnswerFeedback {
+  min-height: 1.5em;
+}
+
+#tokenSolution {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 18px;
+}
+
+#tokenFullQuestion {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .clock-token-row {
+    justify-content: space-between;
+  }
+
+  .token-panel {
+    padding: 16px 12px;
+  }
+
+  .token-toggle {
+    font-size: 12px;
+  }
+}
+
+@media print {
+  #tokenHome,
+  #quiz,
+  .token-toggle {
+    display: none !important;
+  }
+}
 
 /* ========================================
    スマホ版：日付入力欄のはみ出し防止
@@ -1672,8 +1794,8 @@ input[type="date"] {
   min-width: 0;
 }
 
-/* 日付入力欄を含むレイアウトの幅調整 */
 @media (max-width: 600px) {
+
   input[type="date"] {
     display: block;
     width: 100%;
@@ -1681,7 +1803,6 @@ input[type="date"] {
     max-width: 100%;
   }
 
-  /* Flex・Grid内で子要素が縮められるようにする */
   .form-row,
   .date-row,
   .date-range,
@@ -1699,10 +1820,9 @@ input[type="date"] {
 }
 
 /* ========================================
-   日付入力欄のはみ出し修正・確定版
+   日付入力欄のはみ出し修正
 ======================================== */
 
-/* 1. メモ一覧：表示期間 */
 #filter {
   width: 100%;
   min-width: 0;
@@ -1725,7 +1845,7 @@ input[type="date"] {
   appearance: none;
 }
 
-/* 2. 処方日入力：モーダル */
+/* 処方日入力：モーダル */
 .dialog {
   min-width: 0;
   max-width: calc(100vw - 30px);
@@ -1746,7 +1866,6 @@ input[type="date"] {
   max-width: 100%;
 }
 
-/* 3. 処方日入力欄 */
 #prescriptionDateInput,
 #batchPrescriptionDate,
 #modalBody input[type="date"] {
@@ -1759,7 +1878,6 @@ input[type="date"] {
   appearance: none;
 }
 
-/* 4. スマートフォン用 */
 @media screen and (max-width: 600px) {
 
   #filter,
@@ -1781,7 +1899,10 @@ input[type="date"] {
   }
 }
 
-/* メモ見出しと背景色選択を横並びにする */
+/* ========================================
+   メモ見出しと背景色選択を横並び
+======================================== */
+
 .memo-heading-row {
   display: flex;
   align-items: center;
@@ -1818,8 +1939,8 @@ input[type="date"] {
   font-size: 13px;
 }
 
-/* スマホ */
 @media (max-width: 600px) {
+
   .memo-heading-row {
     gap: 6px;
   }
@@ -1857,7 +1978,6 @@ input[type="date"] {
   box-shadow: 0 5px 18px rgba(48, 91, 151, 0.12);
 }
 
-/* 以前の時計アイコンを非表示 */
 #home header.glass-clock-header::before {
   content: none;
   display: none;
@@ -1881,16 +2001,12 @@ input[type="date"] {
   padding: 10px 14px;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 15px;
-
   background: rgba(255, 255, 255, 0.48);
-
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     0 3px 12px rgba(48, 91, 151, 0.08);
-
   color: #345e9e;
   text-align: center;
   text-shadow: none;
@@ -1900,7 +2016,6 @@ input[type="date"] {
   line-height: 1.3;
 }
 
-/* 上部の曜日 */
 .glass-clock-top {
   display: flex;
   align-items: center;
@@ -1918,7 +2033,6 @@ input[type="date"] {
   color: #e6a34d;
 }
 
-/* 時刻 */
 .glass-clock-time {
   display: flex;
   align-items: baseline;
@@ -1942,22 +2056,20 @@ input[type="date"] {
   color: #7295c8;
 }
 
-/* 日付 */
 .glass-clock-date {
   color: #6685b4;
   font-size: 11px;
   font-weight: 500;
 }
 
-/* クイズ切り替え */
 #home .glass-clock-header .token-toggle {
   flex: 0 0 auto;
   min-width: 55px;
   color: #345e9e;
 }
 
-/* スマホ */
 @media screen and (max-width: 600px) {
+
   #home header.glass-clock-header {
     width: 100%;
     padding: 7px;
@@ -1994,20 +2106,15 @@ input[type="date"] {
 
 #home header.home-top-header {
   display: grid;
-  grid-template-columns:
-    minmax(0, 2fr)
-    minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 10px;
-
   width: min(100%, 600px);
   margin: 8px auto 14px;
   padding: 0;
-
   background: transparent;
   box-shadow: none;
   border: none;
   border-radius: 0;
-
   align-items: stretch;
 }
 
@@ -2027,7 +2134,6 @@ input[type="date"] {
   height: 100%;
   display: flex;
   padding: 7px;
-
   border-radius: 16px;
   background: linear-gradient(
     135deg,
@@ -2054,7 +2160,6 @@ input[type="date"] {
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 8px 4px;
   border-radius: 16px;
   background: #f2f6fc;
@@ -2114,207 +2219,106 @@ input[type="date"] {
   }
 }
 
-/* 服薬記録の見出しと確認ボタンを横並び */
+/* ========================================
+   服薬記録：見出しは中央、ボタンは右
+======================================== */
+
 .medication-record-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
   min-width: 0;
   margin-bottom: 12px;
 }
 
 .medication-record-heading h2 {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
-  flex: 0 0 auto;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 20px !important;
+  font-weight: 700;
 }
 
 .medication-record-heading button {
-  flex: 0 1 auto;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: auto;
   max-width: 100%;
   margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
-/* スマートフォン */
-@media screen and (max-width: 600px) {
-  .medication-record-heading {
-    gap: 6px;
-  }
-
-  .medication-record-heading h2 {
-    font-size: 18px;
-  }
-
-  .medication-record-heading button {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-}
-
-/* 服薬記録のタイトルとボタンを横並び */
-.medication-record-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 12px;
-    min-width: 0;
-}
-
-.medication-record-heading h2 {
-    margin: 0;
-    flex-shrink: 0;
-}
-
-.medication-record-heading button {
-    width: auto;
-    flex: 0 1 auto;
-    margin: 0;
-    white-space: nowrap;
-}
-
-/* スマホ表示 */
-@media screen and (max-width: 600px) {
-    .medication-record-heading {
-        gap: 6px;
-    }
-
-    .medication-record-heading h2 {
-        font-size: 18px;
-    }
-
-    .medication-record-heading button {
-        padding: 8px 10px;
-        font-size: 12px;
-    }
-}
-
-/* 服薬記録：見出しは中央、ボタンは右 */
-.medication-record-heading {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    margin-bottom: 12px;
-}
-
-/* 服薬記録の見出し */
-.medication-record-heading h2 {
-    grid-column: 2;
-    grid-row: 1;
-    margin: 0;
-    text-align: center;
-    white-space: nowrap;
-}
-
-/* 記録を確認するボタン */
-.medication-record-heading button {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: auto;
-    margin: 0;
-    padding: 8px 10px;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-/* お薬の管理：見出しを服薬記録と統一 */
 .medication-management-title {
-    font-size: 18px;
-    font-weight: 700;
-    text-align: center;
-    margin: 0 0 12px;
+  font-size: 20px !important;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 12px;
 }
 
-/* アイコンの大きさ */
+/* アイコン */
 .medication-button-icon {
-    display: inline-block;
-    font-size: 21px;
-    font-weight: 700;
-    line-height: 1;
-    vertical-align: middle;
-    margin-right: 5px;
+  display: inline-block;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  margin-right: 5px;
 }
 
-/* ボタン内の文字 */
 .medication-button-icon + span {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
-/* スマホでも見やすいサイズ */
-@media screen and (max-width: 600px) {
-    .medication-management-title {
-        font-size: 18px;
-    }
-
-    .medication-button-icon {
-        font-size: 19px;
-    }
-}
-
-/* ポップな薬管理アイコン */
 .med-pop-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 34px;
-    height: 34px;
-    border-radius: 11px;
-
-    font-size: 21px;
-    line-height: 1;
-    margin-right: 7px;
-    vertical-align: middle;
-
-    box-shadow: 0 2px 5px rgba(0,0,0,0.10);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 21px;
+  line-height: 1;
+  margin-right: 7px;
+  vertical-align: middle;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.10);
 }
 
-/* 登録：明るいグリーン */
 .register-icon {
-    background: #baf2d0;
-    border: 1px solid #87dfac;
+  background: #baf2d0;
+  border: 1px solid #87dfac;
 }
 
-/* 確認：明るいブルー */
 .confirm-icon {
-    background: #c8dcff;
-    border: 1px solid #a3c2ff;
+  background: #c8dcff;
+  border: 1px solid #a3c2ff;
 }
 
-/* スマホ */
 @media screen and (max-width: 600px) {
-    .med-pop-icon {
-        width: 30px;
-        height: 30px;
-        font-size: 19px;
-        margin-right: 5px;
-    }
-}
+  .medication-record-heading h2,
+  .medication-management-title {
+    font-size: 18px !important;
+  }
 
-/* 見出しの文字サイズを統一 */
-.medication-record-heading h2,
-.medication-management-title {
-    font-size: 20px !important;
-    font-weight: 700;
-}
+  .medication-button-icon {
+    font-size: 19px;
+  }
 
-/* スマホ版も同じ大きさに統一 */
-@media screen and (max-width: 600px) {
-    .medication-record-heading h2,
-    .medication-management-title {
-        font-size: 18px !important;
-    }
+  .med-pop-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 19px;
+    margin-right: 5px;
+  }
 }
 
 /* ========================================
@@ -2342,7 +2346,6 @@ input[type="date"] {
   white-space: nowrap;
   font-size: 13px;
 }
-
 
 /* ========================================
    服薬記録一覧：検索欄
@@ -2396,7 +2399,6 @@ input[type="date"] {
   color: #386c2b;
 }
 
-
 /* ========================================
    お薬の管理：検索欄
 ======================================== */
@@ -2416,16 +2418,13 @@ input[type="date"] {
   color: #326db4;
 }
 
-
 /* ========================================
    スマートフォン対応
 ======================================== */
 
-@media (max-width: 600px) {
-
+@media screen and (max-width: 600px) {
   #history .history-page-heading {
-    grid-template-columns:
-      minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   }
 
   #history .history-page-heading h1 {
@@ -2434,7 +2433,8 @@ input[type="date"] {
   }
 
   #history .history-page-heading button {
-    font-size: 11px;
+    font-size: 16px;
+    min-height: 44px;
     padding: 8px 6px;
   }
 
@@ -2458,15 +2458,7 @@ input[type="date"] {
     min-width: 0;
     width: 100%;
   }
-}
 
-/* ========================================
-   スマホ表示の調整
-======================================== */
-
-@media screen and (max-width: 600px) {
-
-  /* 服薬記録の確認ページのタイトル */
   #history h1,
   #history h2,
   #historyPage h1,
@@ -2475,14 +2467,12 @@ input[type="date"] {
     line-height: 1.4;
   }
 
-  /* ホームへボタン */
   #history button,
   #historyPage button {
     font-size: 16px;
     min-height: 44px;
   }
 
-  /* 開始日・終了日の入力欄 */
   input[type="date"] {
     box-sizing: border-box;
     width: 100%;
@@ -2490,7 +2480,6 @@ input[type="date"] {
     min-width: 0;
   }
 
-  /* 日付入力欄を含む要素 */
   #historySearchForm,
   #drugSearchForm {
     box-sizing: border-box;
