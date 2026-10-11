@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>通院アプリ</title>
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 
 <body>
@@ -14,15 +14,40 @@
         <!-- ホーム -->
         <section id="home" class="page active">
 
-            <header>
-                <div class="clock-token-row">
-                    <div id="clock"></div>
+            <header class="home-top-header">
+
+                <!-- 左側 2/3：時計 -->
+                <div class="header-clock-area">
+                    <div class="glass-clock-header">
+                        <div class="glass-clock" id="clock">
+
+                            <div class="glass-clock-top">
+                                <span class="clock-icon">◷</span>
+                                <span id="clockWeekday">TODAY</span>
+                            </div>
+
+                            <div class="glass-clock-time">
+                                <span id="clockHourMinute">00:00</span>
+                                <span id="clockSeconds">:00</span>
+                            </div>
+
+                            <div class="glass-clock-date" id="clockDate">
+                                日付を取得中
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側 1/3：クイズ -->
+                <div class="header-quiz-area">
                     <label class="token-toggle">
                         <span>クイズ</span>
                         <input id="tokenEnabled" type="checkbox" onchange="toggleTokenMode(this.checked)" role="switch">
                         <span class="token-switch" aria-hidden="true"></span>
                     </label>
                 </div>
+
             </header>
 
             <div class="panel green">
@@ -530,7 +555,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <!-- アプリ本体 -->
-    <script src="script.js?v=17"></script>
+    <script src="script.js?v=18"></script>
 
 </body>
 
