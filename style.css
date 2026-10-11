@@ -1,0 +1,1661 @@
+
+/* ========================================
+   基本設定
+======================================== */
+
+:root {
+  --navy: #192e52;
+  --green: #e2efd9;
+  --green-dark: #73ad43;
+  --blue: #deebf8;
+  --blue-dark: #4778c7;
+  --yellow: #fff2cc;
+  --orange: #ffc000;
+  --line: #203457;
+  --white: #ffffff;
+  --gray: #f1f3f6;
+  --red: #b83b3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    "Yu Gothic",
+    "Hiragino Kaku Gothic ProN",
+    Meiryo,
+    sans-serif;
+  background: #ffffff;
+  color: #111111;
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--navy);
+  background: #ffffff;
+  color: #111111;
+  padding: 12px 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+button:hover {
+  background: #f3f6fa;
+}
+
+button:active {
+  opacity: 0.7;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.orange {
+  background: var(--orange);
+}
+
+button.greenbtn {
+  background: #abd28c;
+  border: none;
+}
+
+button.secondary {
+  background: #e8edf3;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111111;
+  padding: 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  accent-color: var(--green-dark);
+}
+
+input[type="file"] {
+  width: 100%;
+}
+
+input[readonly] {
+  background: #f0f3f6;
+  color: #444444;
+}
+
+textarea {
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+}
+
+label {
+  overflow-wrap: anywhere;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+
+/* ========================================
+   ページ切り替え
+======================================== */
+
+#app {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 15px;
+}
+
+.page {
+  display: none;
+  min-height: 100vh;
+}
+
+.page.active {
+  display: block;
+}
+
+.page h1 {
+  color: var(--blue-dark);
+  text-align: center;
+  font-size: clamp(28px, 5vw, 48px);
+  margin: 10px 0 25px;
+  text-shadow: 2px 2px #d4e4f7;
+}
+
+.page h2 {
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 500;
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+.page h3 {
+  margin: 10px 0;
+}
+
+
+/* ========================================
+   ホーム画面
+======================================== */
+
+#home header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+#clock {
+  color: #64a0d7;
+  font-weight: bold;
+  font-size: clamp(28px, 6vw, 52px);
+  white-space: pre-line;
+  text-shadow: 2px 2px #dceafa;
+  line-height: 1.5;
+}
+
+
+/* ========================================
+   共通パネル
+======================================== */
+
+.panel {
+  padding: 25px;
+  margin: 18px 0;
+  border-radius: 35px;
+}
+
+.panel.green {
+  background: var(--green);
+}
+
+.panel.blue {
+  background: var(--blue);
+}
+
+.panel.yellow {
+  background: var(--yellow);
+  border: 1px solid var(--navy);
+}
+
+.green h2 {
+
+  color: var(--green-dark);
+}
+
+.blue h2 {
+  color: #63a2db;
+}
+
+.yellow h2 {
+  color: #f28a32;
+}
+
+
+/* ========================================
+   ボタン配置
+======================================== */
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.two button {
+  min-width: 0;
+  min-height: 60px;
+}
+
+.wide {
+  display: block;
+  width: min(100%, 360px);
+  margin: 20px auto 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+
+.toolbar button {
+  flex-shrink: 0;
+}
+
+.inline-check {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.inline-check input {
+  flex-shrink: 0;
+}
+
+
+/* ========================================
+   服薬記録ボタン
+======================================== */
+
+#home .green h2 {
+  padding: 0;
+  text-align: center;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin: 25px auto;
+  max-width: 700px;
+  align-content: start;
+}
+
+.slots button {
+  min-width: 0;
+  min-height: 75px;
+  background: #ffffff;
+  border: 1px solid #29a84b;
+  border-radius: 8px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.slots button:hover {
+  background: #f1faed;
+}
+
+.slots button.prn-slot {
+  border-color: #e59c37;
+  background: #fff9ec;
+}
+
+.slots button.prn-slot:hover {
+  background: #ffefce;
+}
+
+#slots:empty {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+
+/* ========================================
+   お薬一覧
+======================================== */
+
+.scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 18px;
+}
+
+table {
+  width: 100%;
+  min-width: 1150px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+th,
+td {
+  border: 1px solid #62a1e0;
+  padding: 10px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #ffffff;
+  font-weight: bold;
+}
+
+tbody tr:nth-child(odd) {
+  background: #d4e0f1;
+}
+
+tbody tr:nth-child(even) {
+  background: #eaf1fa;
+}
+
+td button {
+  padding: 6px 10px;
+  margin: 2px;
+  font-size: 13px;
+}
+
+.low-remaining {
+  color: var(--red);
+  font-weight: bold;
+}
+
+
+/* ========================================
+   現在のお薬・過去のお薬の切り替え
+======================================== */
+
+.drug-list-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 22px;
+}
+
+.drug-list-switch button {
+  width: 100%;
+  min-width: 0;
+  min-height: 55px;
+  padding: 12px 10px;
+  border: 2px solid #4778c7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #203457;
+  font-size: 17px;
+  font-weight: bold;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.drug-list-switch button.selected {
+  background: #4778c7;
+  color: #ffffff;
+  border-color: #4778c7;
+}
+
+.drug-list-switch button:not(.selected):hover {
+  background: #e3f0ff;
+}
+
+.drug-list-switch button:focus-visible {
+  outline: 3px solid #ffc000;
+  outline-offset: 3px;
+}
+
+#drugListHeading {
+  margin: 10px 0 18px;
+  text-align: center;
+  color: #4778c7;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* ========================================
+   お薬一覧の操作ボタン
+======================================== */
+
+#drugRows td:last-child button {
+  display: inline-block;
+  margin: 3px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#drugRows [data-edit] {
+  background: #e3f0ff;
+  border: 1px solid #4778c7;
+  color: #203457;
+}
+
+#drugRows .drug-past-button {
+  background: #fff2cc;
+  border: 1px solid #b58a37;
+  color: #654b19;
+}
+
+#drugRows .drug-past-button:hover {
+  background: #ffe6a3;
+}
+
+#drugRows [data-delete] {
+  background: #fce4e4;
+  border: 1px solid #c96b6b;
+  color: #a32828;
+}
+
+#drugRows [data-delete]:hover {
+  background: #f8caca;
+}
+
+
+/* ========================================
+   お薬登録フォーム
+======================================== */
+
+#drugForm {
+  display: grid;
+  gap: 12px;
+}
+
+#drugForm > label {
+  display: block;
+  font-weight: bold;
+}
+
+#drugForm > input:not([type="hidden"]),
+#drugForm > select {
+  width: 100%;
+  min-height: 45px;
+}
+
+#drugForm > .inline-check {
+  display: flex;
+}
+
+#drugForm button[type="submit"] {
+  min-height: 55px;
+  margin-top: 10px;
+}
+
+.hint {
+  color: #626262;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 5px 0 10px;
+}
+
+
+/* ========================================
+   定期薬・頓服薬の切り替え
+======================================== */
+
+.drug-type-fields {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #9bb6d5;
+  border-radius: 14px;
+}
+
+.drug-type-fields h3 {
+  margin: 0 0 5px;
+  font-size: 20px;
+  color: var(--navy);
+  text-align: center;
+}
+
+.drug-type-fields label {
+  font-weight: bold;
+}
+
+.drug-type-fields > input {
+  width: 100%;
+  min-height: 45px;
+}
+
+#regularFields {
+  border-left: 5px solid var(--green-dark);
+}
+
+#prnFields {
+  border-left: 5px solid #e59c37;
+}
+
+
+/* ========================================
+   服薬タイミング入力欄
+======================================== */
+
+#timingFields {
+  display: grid;
+  gap: 10px;
+}
+
+.timing-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.timing-field input {
+  flex: 1;
+  min-width: 0;
+  min-height: 45px;
+}
+
+.timing-field button {
+  flex-shrink: 0;
+  padding: 10px 13px;
+  background: #fce4e4;
+  border-color: #d4a0a0;
+}
+
+.timing-field button:hover {
+  background: #f8d4d4;
+}
+
+#prnCount,
+#prnTiming {
+  width: 100%;
+  min-height: 45px;
+}
+
+#prnTiming {
+  background: #fffdf6;
+}
+
+
+/* ========================================
+   薬がなくなる日
+======================================== */
+
+#endDateField {
+  display: grid;
+  gap: 8px;
+}
+
+#endDateField label {
+  font-weight: bold;
+}
+
+#endDate {
+  width: 100%;
+  min-height: 45px;
+}
+
+
+/* ========================================
+   残数入力欄
+======================================== */
+
+.remaining-field {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  border-radius: 14px;
+}
+
+.remaining-field label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #386c2b;
+}
+
+#remaining {
+  width: 100%;
+  min-height: 50px;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  background: #ffffff;
+}
+
+.remaining-field button {
+  width: 100%;
+  min-height: 45px;
+}
+
+
+/* ========================================
+   OCR画像選択
+======================================== */
+
+#drugImage {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+}
+
+#preview {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 15px auto;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+#ocrButton {
+  display: block;
+  width: 100%;
+  margin-top: 15px;
+  padding: 14px;
+  background: #dcebd5;
+  border: 1px solid #8eb981;
+  border-radius: 10px;
+}
+
+#ocrButton:disabled {
+  opacity: 0.5;
+}
+
+#ocrStatus {
+  margin: 12px 0;
+  font-size: 14px;
+  color: #526b58;
+  white-space: pre-wrap;
+}
+
+#ocrResults {
+  margin-top: 20px;
+}
+
+#ocrResults > label {
+  display: block;
+  margin: 14px 0 6px;
+  font-weight: bold;
+}
+
+#ocrText {
+  width: 100%;
+  min-height: 200px;
+  line-height: 1.7;
+}
+
+#selectedOCRCount {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.ocr-drug-list {
+  display: grid;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.ocr-drug-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #8aa8ca;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.ocr-drug-item input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.ocr-drug-item span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ocr-drug-item:has(input:checked) {
+  background: #dcefd4;
+  border-color: #69a34d;
+}
+
+.ocr-drug-item:hover {
+  border-color: #4778c7;
+}
+
+
+/* ========================================
+   OCR一括登録の確認画面
+======================================== */
+
+#batchReview {
+  margin-top: 25px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid var(--navy);
+  border-radius: 15px;
+}
+
+#batchReview h3 {
+  text-align: center;
+  color: var(--blue-dark);
+  margin-bottom: 12px;
+}
+
+#batchReviewItems {
+  display: grid;
+  gap: 15px;
+}
+
+.batch-review-item {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid #9bb6d5;
+  border-radius: 12px;
+  background: #f5f9ff;
+}
+
+.batch-review-item h4 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.batch-review-item label {
+  display: grid;
+  gap: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.batch-review-item input,
+.batch-review-item select {
+  width: 100%;
+  min-height: 43px;
+}
+
+.batch-review-item .timing-field {
+  margin: 5px 0;
+}
+
+.batch-review-item .timing-field input {
+  min-height: 43px;
+}
+
+.batch-review-item .hint {
+  margin: 0;
+}
+
+.batch-review-item .warning {
+  color: #a63b24;
+  background: #fff2e9;
+  border: 1px solid #e6b5a3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.batch-review-item .remaining-preview {
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+#batchReview > .toolbar {
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+
+/* ========================================
+   服薬セット設定・履歴
+======================================== */
+
+#settingList,
+#historyList {
+  display: grid;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+#settingList > *,
+#historyList > * {
+  background: var(--green);
+  border: 1px solid var(--navy);
+  border-radius: 15px;
+  padding: 15px;
+}
+
+#settingList h3,
+#historyList h3 {
+  margin-top: 0;
+}
+
+#settingList p,
+#historyList p {
+  overflow-wrap: anywhere;
+}
+
+
+/* ========================================
+   メモ
+======================================== */
+
+#home .yellow textarea {
+  min-height: 180px;
+  margin-bottom: 15px;
+}
+
+.memoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin: 25px 0;
+}
+
+.memoCard {
+
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--navy);
+  min-height: 250px;
+  padding: 18px 18px 65px;
+  overflow-wrap: anywhere;
+}
+
+.memoCard::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.9) 0%,
+    rgba(255,255,255,0.9) 49%,
+    #d2dbe9 50%,
+    #d2dbe9 100%
+  );
+  border-left: 1px solid var(--navy);
+  border-top: 1px solid var(--navy);
+}
+
+.memoCard .date {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.memoCard .content {
+  white-space: pre-wrap;
+}
+
+.memoCard .actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  max-width: calc(100% - 30px);
+}
+
+.memoCard .actions button {
+  border-radius: 0;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.memoCard .actions button:first-child {
+  background: #dbe5f5;
+  color: var(--blue-dark);
+}
+
+.memoCard .actions button:last-child {
+  background: #fce4d6;
+  color: #b00000;
+}
+
+
+/* ========================================
+   メモ表示期間
+======================================== */
+
+#filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+#filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-weight: bold;
+}
+
+#filter input {
+  width: 100%;
+}
+
+#filter button:first-of-type {
+  background: var(--green-dark);
+}
+
+#filter button:last-of-type {
+  background: #65a6d9;
+}
+
+
+/* ========================================
+   モーダル
+======================================== */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+}
+
+.dialog {
+  width: min(100%, 600px);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dialog h2 {
+  margin-top: 0;
+  text-align: center;
+}
+
+#modalBody {
+  display: grid;
+  gap: 12px;
+}
+
+#modalBody label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#modalBody input:not([type="checkbox"]),
+#modalBody select,
+#modalBody textarea {
+  width: 100%;
+}
+
+#modalBody .medicationItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f4f8f3;
+  border: 1px solid #bdd6b3;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#modalBody .medicationItem input {
+  flex-shrink: 0;
+}
+
+.dialog .toolbar {
+  justify-content: center;
+}
+
+
+/* ========================================
+   非表示
+======================================== */
+
+.hidden,
+.overlay.hidden,
+#filter.hidden {
+  display: none !important;
+}
+
+
+/* ========================================
+   メモ一覧：ドラッグして位置交換
+======================================== */
+
+#memoGrid .memoCard {
+  padding-top: 48px;
+}
+
+#memoGrid .memo-drag-handle {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: #edf2fa;
+  color: #203457;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+#memoGrid .memo-drag-handle:active {
+  cursor: grabbing;
+}
+
+#memoGrid .memo-dragging {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+#memoGrid .memo-drop-target {
+  outline: 3px solid #4778c7;
+  outline-offset: 2px;
+}
+
+
+/* ========================================
+   メモの背景色選択
+======================================== */
+
+.memo-color-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 20px;
+}
+
+.memo-color-option {
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 2px;
+  border: 2px solid #cbd2da;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.memo-color-option.selected {
+  border: 3px solid #203457;
+  outline: 2px solid #8aa8ca;
+  outline-offset: 2px;
+}
+
+.memo-color-option:hover {
+  filter: brightness(0.97);
+}
+
+
+/* ========================================
+   新規メモの背景色選択
+======================================== */
+
+.memo-new-color {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.memo-new-color label {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.memo-new-color select {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  font-size: 14px;
+  background-color: #ffffff;
+}
+
+.memo-new-color select:has(option[value="yellow"]:checked) {
+  background-color: #fff5cc;
+}
+
+.memo-new-color select:has(option[value="green"]:checked) {
+  background-color: #e5f3df;
+}
+
+.memo-new-color select:has(option[value="blue"]:checked) {
+  background-color: #e3f0ff;
+}
+
+.memo-new-color select:has(option[value="pink"]:checked) {
+  background-color: #fce5ec;
+}
+
+
+/* ========================================
+   ホーム・メモ画面の入力欄を下部固定
+======================================== */
+
+#home.active,
+#memos.active {
+  padding-bottom: 250px;
+}
+
+#home.active > .panel.yellow,
+#memos.active > .panel.yellow {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 30px), 1070px);
+  margin: 0;
+  z-index: 100;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.12);
+  padding: 12px 18px;
+}
+
+#home.active > .panel.yellow h2,
+#memos.active > .panel.yellow h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+#home.active > .panel.yellow textarea,
+#memos.active > .panel.yellow textarea {
+  display: block;
+  width: 100%;
+  height: 85px;
+  min-height: 85px;
+  max-height: 140px;
+  margin-bottom: 8px;
+  resize: vertical;
+}
+
+#home.active > .panel.yellow button,
+#memos.active > .panel.yellow button {
+  min-height: 40px;
+}
+
+
+/* ========================================
+   OCR認識文字欄の非表示
+======================================== */
+
+#ocrText,
+label[for="ocrText"] {
+  display: none !important;
+}
+
+
+/* ========================================
+   タブレット
+======================================== */
+
+@media screen and (max-width: 800px) {
+
+  .panel {
+    padding: 20px;
+  }
+
+  .slots {
+    gap: 10px;
+  }
+
+  .slots button {
+    font-size: 18px;
+  }
+
+}
+
+
+/* ========================================
+   スマートフォン
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+  #app {
+    padding: 10px;
+  }
+
+  .panel {
+    padding: 18px 12px;
+    border-radius: 28px;
+  }
+
+  .page h1 {
+    font-size: 30px;
+  }
+
+  .page h2 {
+    font-size: 23px;
+  }
+
+  #home header {
+    margin-bottom: 25px;
+  }
+
+  #clock {
+    font-size: 32px;
+  }
+
+  .slots {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .slots button {
+    min-height: 65px;
+    padding: 8px 3px;
+    font-size: 16px;
+  }
+
+  .two {
+    gap: 8px;
+  }
+
+  .two button {
+    padding: 10px 5px;
+    font-size: 14px;
+  }
+
+  #drugForm {
+    gap: 10px;
+  }
+
+  #drugForm > input:not([type="hidden"]),
+  #drugForm > select {
+    font-size: 16px;
+  }
+
+  .drug-type-fields {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .drug-type-fields h3 {
+    font-size: 18px;
+    
+  }
+
+  .remaining-field {
+    padding: 12px;
+  }
+
+  #remaining {
+    font-size: 20px;
+  }
+
+  #ocrText {
+    font-size: 16px;
+  }
+
+  .ocr-drug-item {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  #batchReview {
+    padding: 12px;
+  }
+
+  .batch-review-item {
+    padding: 10px;
+  }
+
+  .timing-field {
+    gap: 6px;
+  }
+
+  .timing-field button {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .memoGrid {
+    gap: 10px;
+  }
+
+  .memoCard {
+    min-height: 220px;
+    padding: 10px 10px 60px;
+    font-size: 13px;
+  }
+
+  .memoCard .actions button {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  #filter {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  #filter button {
+    font-size: 13px;
+    padding: 10px 4px;
+  }
+
+  .dialog {
+    padding: 18px;
+  }
+
+  .drug-list-switch {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .drug-list-switch button {
+    min-height: 50px;
+    padding: 10px 5px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  #drugListHeading {
+    font-size: 20px;
+    margin: 8px 0 14px;
+  }
+
+  #drugRows td:last-child button {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .memo-color-picker {
+    gap: 5px;
+  }
+
+  .memo-color-option {
+    font-size: 11px;
+    min-height: 45px;
+  }
+
+  .memo-new-color {
+    gap: 8px;
+    margin: 5px 0 8px;
+  }
+
+  .memo-new-color label {
+    font-size: 12px;
+  }
+
+  .memo-new-color select {
+    min-height: 38px;
+    font-size: 13px;
+  }
+
+  #home.active,
+  #memos.active {
+    padding-bottom: 230px;
+  }
+
+  #home.active > .panel.yellow,
+  #memos.active > .panel.yellow {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  #home.active > .panel.yellow textarea,
+  #memos.active > .panel.yellow textarea {
+    height: 75px;
+    min-height: 75px;
+  }
+
+  #home.active > .panel.yellow h2,
+  #memos.active > .panel.yellow h2 {
+    font-size: 18px;
+  }
+
+}
+
+
+/* ========================================
+   小さいスマートフォン
+======================================== */
+
+@media screen and (max-width: 360px) {
+
+  #app {
+    padding: 6px;
+  }
+
+  .slots {
+    gap: 5px;
+  }
+
+  .slots button {
+    font-size: 14px;
+  }
+
+  .memoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .memoCard {
+    min-height: 180px;
+  }
+
+  .toolbar {
+    gap: 6px;
+  }
+
+  .toolbar button {
+    padding: 9px;
+    font-size: 12px;
+  }
+
+}
+
+
+/* ========================================
+   印刷
+======================================== */
+
+@media print {
+
+  body {
+    background: #ffffff;
+  }
+
+  #app {
+    max-width: none;
+    padding: 0;
+  }
+
+  .panel,
+  .memoCard {
+    break-inside: avoid;
+  }
+
+  button {
+    display: none !important;
+  }
+
+  .overlay {
+    display: none !important;
+  }
+
+  .scroll {
+    overflow: visible;
+  }
+
+  #home.active > .panel.yellow,
+  #memos.active > .panel.yellow {
+    position: static;
+    transform: none;
+    width: 100%;
+    box-shadow: none;
+  }
+
+}
+
+/* ========================================
+   処方日入力・登録確認画面
+======================================== */
+
+/* 処方日の入力欄 */
+#prescriptionDateInput,
+#batchPrescriptionDate {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #203457;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+/* 処方日の入力ボックス */
+.prescription-date-box {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    background: #f5f9ff;
+    border: 1px solid #9bb6d5;
+    border-radius: 12px;
+}
+
+.prescription-date-box label {
+    font-weight: bold;
+}
+
+/* 登録内容の確認画面 */
+.registration-review {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    background: #ffffff;
+    border: 1px solid #9bb6d5;
+    border-radius: 14px;
+}
+
+/* 薬剤ごとの確認欄 */
+.registration-review-item {
+    padding: 15px;
+    background: #f5f9ff;
+    border: 1px solid #9bb6d5;
+    border-radius: 10px;
+}
+
+.registration-review-item h3 {
+    margin: 0 0 12px;
+    color: #192e52;
+}
+
+/* 処方日・薬がなくなる日の表示 */
+.registration-date-info {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    background: #e7f3e1;
+    border: 1px solid #8fbd7e;
+    border-radius: 8px;
+}
+
+/* 登録確定・キャンセルボタン */
+.registration-review-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.registration-review-actions button {
+    min-height: 48px;
+    padding: 12px 20px;
+}
+
+/* スマートフォン */
+@media screen and (max-width: 600px) {
+
+    .prescription-date-box,
+    .registration-review {
+        padding: 12px;
+    }
+
+    .registration-review-item {
+        padding: 12px;
+    }
+
+    .registration-review-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .registration-review-actions button {
+        min-width: 0;
+        padding: 10px 6px;
+        font-size: 14px;
+    }
+}
+
+/* 薬剤名の詳細ページリンク */
+.drug-detail-link {
+  color: #1765b3;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drug-detail-link:hover {
+  color: #0a4079;
+}
+
+.drug-detail-link:focus-visible {
+  outline: 2px solid #1765b3;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* 学習クイズ（既存レイアウトから独立） */
+.clock-token-row{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,36px)}
+.clock-token-row #clock{min-width:0}
+.token-toggle{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:bold;font-size:13px;cursor:pointer;flex-shrink:0}
+.token-toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.token-switch{width:54px;height:30px;background:#a4acb6;border-radius:20px;position:relative;transition:background .15s}
+.token-switch:before{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:white;transition:transform .15s}
+.token-toggle input:checked+.token-switch{background:#438b63}
+.token-toggle input:checked+.token-switch:before{transform:translateX(24px)}
+.token-toggle input:focus-visible+.token-switch{outline:3px solid #ffc000;outline-offset:3px}
+.token-panel{background:#eef4fc;border:1px solid #a9c2e4}
+.token-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.token-masked{display:flex;flex-wrap:wrap;gap:3px;margin:18px 0;padding:14px 9px;background:white;border-radius:10px;min-height:95px;align-content:flex-start}
+.token-char{width:clamp(18px,5vw,24px);height:29px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold;border-radius:2px;white-space:nowrap}
+.token-char.closed{background:#202020;color:#202020}
+.token-char.open{background:transparent;color:#111}
+#tokenAnswerArea{display:grid;gap:10px;margin-top:20px}
+#tokenAnswerArea input{width:100%;font-size:16px}
+#tokenAnswerFeedback{min-height:1.5em}
+#tokenSolution{background:#fff;border-radius:12px;padding:16px;margin-top:18px}
+#tokenFullQuestion{white-space:pre-wrap}
+@media(max-width:600px){.clock-token-row{justify-content:space-between}.token-panel{padding:16px 12px}.token-toggle{font-size:12px}}
+@media print{#tokenHome,#quiz,.token-toggle{display:none!important}}
