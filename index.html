@@ -1,524 +1,457 @@
-
 <!doctype html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>通院アプリ</title>
     <link rel="stylesheet" href="style.css?v=20261011">
-<script src="script.js?v=20261011"></script>
+    <script src="script.js?v=20261011"></script>
 </head>
-<body>
-<main id="app">
 
-    <!-- ホーム -->
-    <section id="home" class="page active">
-        <header class="home-top-header">
-            <div class="header-clock-area">
-                <div class="glass-clock-header">
-                    <div class="glass-clock" id="clock">
-                        <div class="glass-clock-top">
-                            <span class="clock-icon">◷</span>
-                            <span id="clockWeekday">TODAY</span>
-                        </div>
-                        <div class="glass-clock-time">
-                            <span id="clockHourMinute">00:00</span>
-                            <span id="clockSeconds">:00</span>
-                        </div>
-                        <div class="glass-clock-date" id="clockDate">
-                            日付を取得中
+<body>
+    <main id="app">
+
+        <!-- ホーム -->
+        <section id="home" class="page active">
+            <header class="home-top-header">
+                <div class="header-clock-area">
+                    <div class="glass-clock-header">
+                        <div class="glass-clock" id="clock">
+                            <div class="glass-clock-top">
+                                <span class="clock-icon">◷</span>
+                                <span id="clockWeekday">TODAY</span>
+                            </div>
+                            <div class="glass-clock-time">
+                                <span id="clockHourMinute">00:00</span>
+                                <span id="clockSeconds">:00</span>
+                            </div>
+                            <div class="glass-clock-date" id="clockDate">
+                                日付を取得中
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="header-quiz-area">
-                <label class="token-toggle">
-                    <span>クイズ</span>
-                    <input id="tokenEnabled" type="checkbox"
-                           onchange="toggleTokenMode(this.checked)"
-                           role="switch">
-                    <span class="token-switch" aria-hidden="true"></span>
-                </label>
-            </div>
-        </header>
-
-        <div class="panel green">
-            <div class="medication-record-heading">
-                <h2>服薬記録</h2>
-                <button type="button" class="wide greenbtn"
-                        onclick="showPage('history')">
-                    記録を確認する
-                </button>
-            </div>
-            <div id="slots" class="slots"></div>
-        </div>
-
-        <div class="panel blue">
-            <h2 class="medication-management-title">お薬の管理</h2>
-            <div class="two">
-                <button type="button" onclick="openNewDrugForm()">
-                    <span class="med-pop-icon register-icon"
-                          aria-hidden="true">💊</span>
-                    <span>登録</span>
-                </button>
-                <button type="button" onclick="showPage('drugs')">
-                    <span class="med-pop-icon confirm-icon"
-                          aria-hidden="true">📋</span>
-                    <span>確認</span>
-                </button>
-            </div>
-        </div>
-
-        <div id="tokenHome" class="panel token-panel" hidden>
-            <div class="token-summary">
-                <strong>クイズ</strong>
-                <span id="tokenSummary"></span>
-            </div>
-            <button type="button" class="wide" onclick="showPage('quiz')">
-                クイズを開く
-            </button>
-        </div>
-
-        <div class="panel yellow">
-            <div class="memo-heading-row">
-                <h2>メモ</h2>
-                <div class="memo-new-color">
-                    <label for="quickMemoColor">背景色</label>
-                    <select id="quickMemoColor">
-                        <option value="white">白</option>
-                        <option value="yellow">淡い黄色</option>
-                        <option value="green">淡い緑</option>
-                        <option value="blue">淡い青</option>
-                        <option value="pink">淡いピンク</option>
-                    </select>
-                </div>
-            </div>
-            <textarea id="quickMemo"
-                      placeholder="気づいたことをメモ"></textarea>
-            <div class="two">
-                <button type="button" onclick="showPage('memos')">
-                    メモ一覧へ
-                </button>
-                <button type="button" class="orange"
-                        onclick="addMemo('quickMemo')">
-                    追加
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- クイズ -->
-    <section id="quiz" class="page">
-        <h1>クイズ</h1>
-        <div class="toolbar">
-            <button type="button" onclick="showPage('home')">
-                ホームへ
-            </button>
-        </div>
-        <div class="panel token-panel" id="tokenQuizPanel">
-            <div class="token-summary">
-                <strong id="tokenQuizProgress"></strong>
-                <strong id="tokenBalance"></strong>
-            </div>
-            <p id="tokenQuizMeta"></p>
-            <div id="tokenMaskedQuestion" class="token-masked"
-                 aria-label="黒塗りされた問題文"></div>
-            <p id="tokenRevealInfo" class="hint"></p>
-            <button id="tokenRevealButton" type="button" class="wide"
-                    onclick="revealTokenCharacter()">
-                ランダムに1文字開示（1pt）
-            </button>
-            <div id="tokenAnswerArea">
-                <label for="tokenAnswer">回答</label>
-                <input id="tokenAnswer" type="text" autocomplete="off"
-                       placeholder="答えを入力">
-                <button id="tokenAnswerButton" type="button" class="wide"
-                        onclick="submitTokenAnswer()">
-                    回答する（1pt）
-                </button>
-                <p id="tokenAnswerFeedback" role="status"></p>
-            </div>
-            <div id="tokenSolution" hidden>
-                <h2>正解！</h2>
-                <p id="tokenFullQuestion"></p>
-                <p>
-                    <strong>答え：</strong>
-                    <span id="tokenCorrectAnswer"></span>
-                </p>
-                <p id="tokenExplanation"></p>
-                <button type="button" class="wide orange"
-                        onclick="nextTokenQuestion()">
-                    次の問題へ
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- お薬一覧 -->
-    <section id="drugs" class="page">
-        <h1>お薬の管理</h1>
-        <div class="toolbar">
-            <button type="button" onclick="showPage('home')">
-                ホーム
-            </button>
-            <button type="button" class="orange"
-                    onclick="openNewDrugForm()">
-                追加
-            </button>
-        </div>
-
-        <div class="panel blue">
-            <div class="drug-list-switch" role="group"
-                 aria-label="お薬の表示切り替え">
-                <button type="button" id="currentDrugsButton"
-                        class="selected" aria-pressed="true"
-                        onclick="switchDrugList('current')">
-                    現在のお薬
-                </button>
-                <button type="button" id="pastDrugsButton"
-                        aria-pressed="false"
-                        onclick="switchDrugList('past')">
-                    過去のお薬
-                </button>
-            </div>
-
-            <!-- お薬の検索 -->
-            <form id="drugSearchForm"
-                  class="history-search-panel drug-search-panel"
-                  onsubmit="event.preventDefault(); renderDrugs();">
-                <h2>検索・絞り込み</h2>
-                <div class="history-search-dates">
-                    <label for="drugSearchStart">
-                        処方日（開始）
-                        <input type="date" id="drugSearchStart">
-                    </label>
-                    <label for="drugSearchEnd">
-                        処方日（終了）
-                        <input type="date" id="drugSearchEnd">
+                <div class="header-quiz-area">
+                    <label class="token-toggle">
+                        <span>クイズ</span>
+                        <input id="tokenEnabled" type="checkbox" onchange="toggleTokenMode(this.checked)" role="switch">
+                        <span class="token-switch" aria-hidden="true"></span>
                     </label>
                 </div>
-                <label for="drugSearchName">
-                    薬剤名
-                    <input type="search" id="drugSearchName"
-                           placeholder="薬剤名の一部を入力">
-                </label>
-                <div class="history-search-actions">
-                    <button type="submit" class="greenbtn">
-                        検索する
-                    </button>
-                    <button type="button" class="secondary"
-                            onclick="clearDrugSearch()">
-                        クリア
+            </header>
+
+            <div class="panel green">
+                <div class="medication-record-heading">
+                    <h2>服薬記録</h2>
+                    <button type="button" class="wide greenbtn" onclick="showPage('history')">
+                        記録を確認する
                     </button>
                 </div>
-                <p id="drugSearchCount"
-                   class="history-search-count" role="status"></p>
-            </form>
-
-            <h2 id="drugListHeading">
-                現在のお薬を確認する
-            </h2>
-            <div class="scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>薬剤名</th>
-                            <th>規格</th>
-                            <th>種類</th>
-                            <th>処方数量</th>
-                            <th>処方日数</th>
-                            <th>頓服の処方数</th>
-                            <th>服薬タイミング</th>
-                            <th>処方日</th>
-                            <th>薬がなくなる日</th>
-                            <th>残数</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="drugRows"></tbody>
-                </table>
+                <div id="slots" class="slots"></div>
             </div>
-        </div>
-    </section>
 
-    <!-- お薬登録・編集 -->
-    <section id="drugform" class="page">
-        <h1>お薬を登録する</h1>
-        <div class="toolbar">
-            <button type="button" onclick="showPage('home')">
-                ホーム
-            </button>
-            <button type="button" onclick="showPage('drugs')">
-                お薬一覧へ
-            </button>
-        </div>
-
-        <!-- OCR読み取り -->
-        <div class="panel yellow">
-            <h2>画像からお薬を読み取る</h2>
-            <label for="drugImage">
-                処方薬一覧の画像を選択
-            </label>
-            <input type="file" id="drugImage" accept="image/*"
-                   onchange="previewImage(this)">
-            <img id="preview" alt="選択した処方薬の画像" hidden>
-            <button type="button" id="ocrButton"
-                    onclick="recognizeDrugImage()">
-                文字を自動認識する
-            </button>
-            <p id="ocrStatus" aria-live="polite"></p>
-
-            <div id="ocrResults" hidden>
-                <label for="ocrText">
-                    認識した文字（修正可能）
-                </label>
-                <textarea id="ocrText" rows="10"></textarea>
-                <p class="hint">
-                    薬剤名と規格を含む行から薬剤ごとの情報を分割します。
-                    読み取り結果を確認してください。
-                </p>
-                <div class="toolbar">
-                    <button type="button" onclick="selectAllOCRDrugs()">
-                        すべて選択
-                    </button>
-                    <button type="button" onclick="clearOCRSelection()">
-                        選択解除
-                    </button>
-                </div>
-                <div id="ocrDrugList" class="ocr-drug-list"></div>
-                <p id="selectedOCRCount" class="hint"></p>
+            <div class="panel blue">
+                <h2 class="medication-management-title">お薬の管理</h2>
                 <div class="two">
-                    <button type="button" onclick="applyOCRToDrugForm()">
-                        1件を入力欄に反映
+                    <button type="button" onclick="openNewDrugForm()">
+                        <span class="med-pop-icon register-icon" aria-hidden="true">💊</span>
+                        <span>登録</span>
                     </button>
-                    <button type="button" class="orange"
-                            onclick="prepareBatchRegistration()">
-                        処方日を入力して登録
+                    <button type="button" onclick="showPage('drugs')">
+                        <span class="med-pop-icon confirm-icon" aria-hidden="true">📋</span>
+                        <span>確認</span>
                     </button>
                 </div>
             </div>
-        </div>
 
-        <!-- 手動入力・編集 -->
-        <form id="drugForm" class="panel blue"
-              onsubmit="saveDrug(event)">
-            <input type="hidden" id="drugId">
-
-            <label for="drugName">薬剤名</label>
-            <input type="text" id="drugName" required>
-
-            <label for="strength">規格</label>
-            <input type="text" id="strength"
-                   placeholder="例：200mg" required>
-
-            <label for="drugType">薬剤の種類</label>
-            <select id="drugType"
-                    onchange="updateDrugTypeFields()">
-                <option value="regular">定期薬</option>
-                <option value="prn">頓服薬</option>
-            </select>
-
-            <!-- 定期薬 -->
-            <div id="regularFields" class="drug-type-fields">
-                <h3>定期薬の情報</h3>
-
-                <label for="total">処方数量（任意）</label>
-                <input type="text" id="total" placeholder="例：2">
-
-                <label for="prescriptionDays">処方日数</label>
-                <input type="number" id="prescriptionDays"
-                       min="1" step="1"
-                       oninput="calculateInitialRemaining()">
-
-                <label>定期薬の服薬タイミング</label>
-                <div id="timingFields"></div>
-
-                <button type="button" class="secondary"
-                        onclick="addTimingField()">
-                    服薬タイミングを追加
-                </button>
-                <p class="hint">
-                    例：朝後、夕後。複数ある場合は別々に入力します。
-                </p>
-            </div>
-
-            <!-- 頓服薬 -->
-            <div id="prnFields" class="drug-type-fields" hidden>
-                <h3>頓服薬の情報</h3>
-
-                <label for="prnCount">頓服の処方数</label>
-                <input type="number" id="prnCount"
-                       min="1" step="1" placeholder="例：14"
-                       oninput="calculateInitialRemaining()">
-
-                <label for="prnTiming">
-                    頓服薬の服薬タイミング
-                </label>
-                <input type="text" id="prnTiming"
-                       placeholder="例：不穏時">
-
-                <p class="hint">
-                    頓服薬は、処方数量・処方日数・薬がなくなる日を使用しません。
-                </p>
-            </div>
-
-            <!-- 残数 -->
-            <div class="remaining-field">
-                <label for="remaining">残数</label>
-                <input type="number" id="remaining"
-                       min="0" step="1"
-                       placeholder="自動計算">
-                <p class="hint">
-                    定期薬：処方日数 × 1日の服薬回数
-                    頓服薬：頓服の処方数
-                </p>
-                <button type="button" class="secondary"
-                        onclick="calculateInitialRemaining(true)">
-                    初期残数を再計算
+            <div id="tokenHome" class="panel token-panel" hidden>
+                <div class="token-summary">
+                    <strong>クイズ</strong>
+                    <span id="tokenSummary"></span>
+                </div>
+                <button type="button" class="wide" onclick="showPage('quiz')">
+                    クイズを開く
                 </button>
             </div>
 
-            <label class="inline-check">
-                <input type="checkbox" id="isPast">
-                過去のお薬
-            </label>
-
-            <button type="submit" class="orange">
-                処方日を入力して登録
-            </button>
-        </form>
-    </section>
-
-    <!-- 服薬セット設定 -->
-    <section id="settings" class="page">
-        <h1>服薬セットの設定</h1>
-        <button type="button" onclick="showPage('home')">
-            ホームへ
-        </button>
-        <div id="settingList"></div>
-    </section>
-
-    <!-- 服薬記録一覧 -->
-    <section id="history" class="page">
-        <div class="history-page-heading">
-            <h1>服薬記録一覧</h1>
-            <button type="button" onclick="showPage('home')">
-                ホームへ
-            </button>
-        </div>
-
-        <!-- 服薬記録の検索 -->
-        <form id="historySearchForm"
-              class="history-search-panel"
-              onsubmit="event.preventDefault(); renderHistory();">
-            <h2>検索・絞り込み</h2>
-
-            <div class="history-search-dates">
-                <label for="historyStart">
-                    開始日
-                    <input type="date" id="historyStart">
-                </label>
-                <label for="historyEnd">
-                    終了日
-                    <input type="date" id="historyEnd">
-                </label>
-            </div>
-
-            <label for="historyDrugName">
-                薬剤名
-                <input type="search" id="historyDrugName"
-                       placeholder="薬剤名の一部を入力">
-            </label>
-
-            <div class="history-search-actions">
-                <button type="submit" class="greenbtn">
-                    検索する
-                </button>
-                <button type="button" class="secondary"
-                        onclick="clearHistorySearch()">
-                    クリア
-                </button>
-            </div>
-            <p id="historySearchCount"
-               class="history-search-count" role="status"></p>
-        </form>
-
-        <div id="historyList"></div>
-    </section>
-
-    <!-- メモ -->
-    <section id="memos" class="page">
-        <h1>メモ一覧</h1>
-
-        <div class="toolbar">
-            <button type="button" onclick="showPage('home')">
-                ホーム
-            </button>
-            <button type="button"
-                    onclick="$('filter').classList.toggle('hidden')">
-                表示期間 開／閉
-            </button>
-        </div>
-
-        <div id="filter" class="panel green hidden">
-            <label for="start">開始日</label>
-            <input type="date" id="start">
-
-            <label for="finish">終了日</label>
-            <input type="date" id="finish">
-
-            <button type="button" onclick="renderMemos()">
-                表示
-            </button>
-            <button type="button" onclick="deleteRange()">
-                期間内一括削除
-            </button>
-        </div>
-
-        <div id="memoGrid" class="memoGrid"></div>
-
-        <div class="panel yellow">
-            <div class="memo-heading-row">
-                <h2>メモ</h2>
-                <div class="memo-new-color">
-                    <label for="listMemoColor">背景色</label>
-                    <select id="listMemoColor">
-                        <option value="white">白</option>
-                        <option value="yellow">淡い黄色</option>
-                        <option value="green">淡い緑</option>
-                        <option value="blue">淡い青</option>
-                        <option value="pink">淡いピンク</option>
-                    </select>
+            <div class="panel yellow">
+                <div class="memo-heading-row">
+                    <h2>メモ</h2>
+                    <div class="memo-new-color">
+                        <label for="quickMemoColor">背景色</label>
+                        <select id="quickMemoColor">
+                            <option value="white">白</option>
+                            <option value="yellow">淡い黄色</option>
+                            <option value="green">淡い緑</option>
+                            <option value="blue">淡い青</option>
+                            <option value="pink">淡いピンク</option>
+                        </select>
+                    </div>
+                </div>
+                <textarea id="quickMemo" placeholder="気づいたことをメモ"></textarea>
+                <div class="two">
+                    <button type="button" onclick="showPage('memos')">
+                        メモ一覧へ
+                    </button>
+                    <button type="button" class="orange" onclick="addMemo('quickMemo')">
+                        追加
+                    </button>
                 </div>
             </div>
+        </section>
 
-            <textarea id="listMemo"
-                      placeholder="メモを入力"></textarea>
-            <button type="button" class="orange"
-                    onclick="addMemo('listMemo')">
-                追加
-            </button>
-        </div>
-    </section>
 
-</main>
+        <!-- クイズ -->
+        <section id="quiz" class="page">
 
-<!-- 共通モーダル -->
-<div id="modal" class="overlay hidden"
-     role="dialog" aria-modal="true">
-    <div class="dialog">
-        <h2 id="modalTitle"></h2>
-        <div id="modalBody"></div>
-        <div class="toolbar">
-            <button type="button" onclick="closeModal()">
-                閉じる
-            </button>
+            <div class="quiz-page-heading">
+                <h1>クイズ</h1>
+                <button type="button" onclick="showPage('home')">
+                    ホームへ
+                </button>
+            </div>
+
+            <div class="panel token-panel" id="tokenQuizPanel">
+
+
+                <!-- お薬一覧 -->
+                <section id="drugs" class="page">
+                    <h1>お薬の管理</h1>
+                    <div class="toolbar">
+                        <button type="button" onclick="showPage('home')">
+                            ホーム
+                        </button>
+                        <button type="button" class="orange" onclick="openNewDrugForm()">
+                            追加
+                        </button>
+                    </div>
+
+                    <div class="panel blue">
+                        <div class="drug-list-switch" role="group" aria-label="お薬の表示切り替え">
+                            <button type="button" id="currentDrugsButton" class="selected" aria-pressed="true"
+                                onclick="switchDrugList('current')">
+                                現在のお薬
+                            </button>
+                            <button type="button" id="pastDrugsButton" aria-pressed="false"
+                                onclick="switchDrugList('past')">
+                                過去のお薬
+                            </button>
+                        </div>
+
+                        <!-- お薬の検索 -->
+                        <form id="drugSearchForm" class="history-search-panel drug-search-panel"
+                            onsubmit="event.preventDefault(); renderDrugs();">
+                            <h2>検索・絞り込み</h2>
+                            <div class="history-search-dates">
+                                <label for="drugSearchStart">
+                                    処方日（開始）
+                                    <input type="date" id="drugSearchStart">
+                                </label>
+                                <label for="drugSearchEnd">
+                                    処方日（終了）
+                                    <input type="date" id="drugSearchEnd">
+                                </label>
+                            </div>
+                            <label for="drugSearchName">
+                                薬剤名
+                                <input type="search" id="drugSearchName" placeholder="薬剤名の一部を入力">
+                            </label>
+                            <div class="history-search-actions">
+                                <button type="submit" class="greenbtn">
+                                    検索する
+                                </button>
+                                <button type="button" class="secondary" onclick="clearDrugSearch()">
+                                    クリア
+                                </button>
+                            </div>
+                            <p id="drugSearchCount" class="history-search-count" role="status"></p>
+                        </form>
+
+                        <h2 id="drugListHeading">
+                            現在のお薬を確認する
+                        </h2>
+                        <div class="scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>薬剤名</th>
+                                        <th>規格</th>
+                                        <th>種類</th>
+                                        <th>処方数量</th>
+                                        <th>処方日数</th>
+                                        <th>頓服の処方数</th>
+                                        <th>服薬タイミング</th>
+                                        <th>処方日</th>
+                                        <th>薬がなくなる日</th>
+                                        <th>残数</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drugRows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- お薬登録・編集 -->
+                <section id="drugform" class="page">
+                    <h1>お薬を登録する</h1>
+                    <div class="toolbar">
+                        <button type="button" onclick="showPage('home')">
+                            ホーム
+                        </button>
+                        <button type="button" onclick="showPage('drugs')">
+                            お薬一覧へ
+                        </button>
+                    </div>
+
+                    <!-- OCR読み取り -->
+                    <div class="panel yellow">
+                        <h2>画像からお薬を読み取る</h2>
+                        <label for="drugImage">
+                            処方薬一覧の画像を選択
+                        </label>
+                        <input type="file" id="drugImage" accept="image/*" onchange="previewImage(this)">
+                        <img id="preview" alt="選択した処方薬の画像" hidden>
+                        <button type="button" id="ocrButton" onclick="recognizeDrugImage()">
+                            文字を自動認識する
+                        </button>
+                        <p id="ocrStatus" aria-live="polite"></p>
+
+                        <div id="ocrResults" hidden>
+                            <label for="ocrText">
+                                認識した文字（修正可能）
+                            </label>
+                            <textarea id="ocrText" rows="10"></textarea>
+                            <p class="hint">
+                                薬剤名と規格を含む行から薬剤ごとの情報を分割します。
+                                読み取り結果を確認してください。
+                            </p>
+                            <div class="toolbar">
+                                <button type="button" onclick="selectAllOCRDrugs()">
+                                    すべて選択
+                                </button>
+                                <button type="button" onclick="clearOCRSelection()">
+                                    選択解除
+                                </button>
+                            </div>
+                            <div id="ocrDrugList" class="ocr-drug-list"></div>
+                            <p id="selectedOCRCount" class="hint"></p>
+                            <div class="two">
+                                <button type="button" onclick="applyOCRToDrugForm()">
+                                    1件を入力欄に反映
+                                </button>
+                                <button type="button" class="orange" onclick="prepareBatchRegistration()">
+                                    処方日を入力して登録
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 手動入力・編集 -->
+                    <form id="drugForm" class="panel blue" onsubmit="saveDrug(event)">
+                        <input type="hidden" id="drugId">
+
+                        <label for="drugName">薬剤名</label>
+                        <input type="text" id="drugName" required>
+
+                        <label for="strength">規格</label>
+                        <input type="text" id="strength" placeholder="例：200mg" required>
+
+                        <label for="drugType">薬剤の種類</label>
+                        <select id="drugType" onchange="updateDrugTypeFields()">
+                            <option value="regular">定期薬</option>
+                            <option value="prn">頓服薬</option>
+                        </select>
+
+                        <!-- 定期薬 -->
+                        <div id="regularFields" class="drug-type-fields">
+                            <h3>定期薬の情報</h3>
+
+                            <label for="total">処方数量（任意）</label>
+                            <input type="text" id="total" placeholder="例：2">
+
+                            <label for="prescriptionDays">処方日数</label>
+                            <input type="number" id="prescriptionDays" min="1" step="1"
+                                oninput="calculateInitialRemaining()">
+
+                            <label>定期薬の服薬タイミング</label>
+                            <div id="timingFields"></div>
+
+                            <button type="button" class="secondary" onclick="addTimingField()">
+                                服薬タイミングを追加
+                            </button>
+                            <p class="hint">
+                                例：朝後、夕後。複数ある場合は別々に入力します。
+                            </p>
+                        </div>
+
+                        <!-- 頓服薬 -->
+                        <div id="prnFields" class="drug-type-fields" hidden>
+                            <h3>頓服薬の情報</h3>
+
+                            <label for="prnCount">頓服の処方数</label>
+                            <input type="number" id="prnCount" min="1" step="1" placeholder="例：14"
+                                oninput="calculateInitialRemaining()">
+
+                            <label for="prnTiming">
+                                頓服薬の服薬タイミング
+                            </label>
+                            <input type="text" id="prnTiming" placeholder="例：不穏時">
+
+                            <p class="hint">
+                                頓服薬は、処方数量・処方日数・薬がなくなる日を使用しません。
+                            </p>
+                        </div>
+
+                        <!-- 残数 -->
+                        <div class="remaining-field">
+                            <label for="remaining">残数</label>
+                            <input type="number" id="remaining" min="0" step="1" placeholder="自動計算">
+                            <p class="hint">
+                                定期薬：処方日数 × 1日の服薬回数
+                                頓服薬：頓服の処方数
+                            </p>
+                            <button type="button" class="secondary" onclick="calculateInitialRemaining(true)">
+                                初期残数を再計算
+                            </button>
+                        </div>
+
+                        <label class="inline-check">
+                            <input type="checkbox" id="isPast">
+                            過去のお薬
+                        </label>
+
+                        <button type="submit" class="orange">
+                            処方日を入力して登録
+                        </button>
+                    </form>
+                </section>
+
+                <!-- 服薬セット設定 -->
+                <section id="settings" class="page">
+                    <h1>服薬セットの設定</h1>
+                    <button type="button" onclick="showPage('home')">
+                        ホームへ
+                    </button>
+                    <div id="settingList"></div>
+                </section>
+
+                <!-- 服薬記録一覧 -->
+                <section id="history" class="page">
+                    <div class="history-page-heading">
+                        <h1>服薬記録一覧</h1>
+                        <button type="button" onclick="showPage('home')">
+                            ホームへ
+                        </button>
+                    </div>
+
+                    <!-- 服薬記録の検索 -->
+                    <form id="historySearchForm" class="history-search-panel"
+                        onsubmit="event.preventDefault(); renderHistory();">
+                        <h2>検索・絞り込み</h2>
+
+                        <div class="history-search-dates">
+                            <label for="historyStart">
+                                開始日
+                                <input type="date" id="historyStart">
+                            </label>
+                            <label for="historyEnd">
+                                終了日
+                                <input type="date" id="historyEnd">
+                            </label>
+                        </div>
+
+                        <label for="historyDrugName">
+                            薬剤名
+                            <input type="search" id="historyDrugName" placeholder="薬剤名の一部を入力">
+                        </label>
+
+                        <div class="history-search-actions">
+                            <button type="submit" class="greenbtn">
+                                検索する
+                            </button>
+                            <button type="button" class="secondary" onclick="clearHistorySearch()">
+                                クリア
+                            </button>
+                        </div>
+                        <p id="historySearchCount" class="history-search-count" role="status"></p>
+                    </form>
+
+                    <div id="historyList"></div>
+                </section>
+
+                <!-- メモ -->
+                <section id="memos" class="page">
+                    <h1>メモ一覧</h1>
+
+                    <div class="toolbar">
+                        <button type="button" onclick="showPage('home')">
+                            ホーム
+                        </button>
+                        <button type="button" onclick="$('filter').classList.toggle('hidden')">
+                            表示期間 開／閉
+                        </button>
+                    </div>
+
+                    <div id="filter" class="panel green hidden">
+                        <label for="start">開始日</label>
+                        <input type="date" id="start">
+
+                        <label for="finish">終了日</label>
+                        <input type="date" id="finish">
+
+                        <button type="button" onclick="renderMemos()">
+                            表示
+                        </button>
+                        <button type="button" onclick="deleteRange()">
+                            期間内一括削除
+                        </button>
+                    </div>
+
+                    <div id="memoGrid" class="memoGrid"></div>
+
+                    <div class="panel yellow">
+                        <div class="memo-heading-row">
+                            <h2>メモ</h2>
+                            <div class="memo-new-color">
+                                <label for="listMemoColor">背景色</label>
+                                <select id="listMemoColor">
+                                    <option value="white">白</option>
+                                    <option value="yellow">淡い黄色</option>
+                                    <option value="green">淡い緑</option>
+                                    <option value="blue">淡い青</option>
+                                    <option value="pink">淡いピンク</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <textarea id="listMemo" placeholder="メモを入力"></textarea>
+                        <button type="button" class="orange" onclick="addMemo('listMemo')">
+                            追加
+                        </button>
+                    </div>
+                </section>
+
+    </main>
+
+    <!-- 共通モーダル -->
+    <div id="modal" class="overlay hidden" role="dialog" aria-modal="true">
+        <div class="dialog">
+            <h2 id="modalTitle"></h2>
+            <div id="modalBody"></div>
+            <div class="toolbar">
+                <button type="button" onclick="closeModal()">
+                    閉じる
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- OCRライブラリ -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- OCRライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 </body>
+
 </html>

@@ -2575,7 +2575,9 @@ function renderHistory() {
   const end = $("historyEnd")?.value || "";
   const drugQuery = ($("historyDrugName")?.value || "").trim().toLocaleLowerCase("ja-JP");
 
-  const history = [...data.history]
+  
+const history = [...data.history]
+  .filter(item => !item.canceled)
     .filter(item => {
       const dateValue = item.timestamp || item.date || "";
       const parsedDate = new Date(dateValue);
@@ -2590,11 +2592,23 @@ function renderHistory() {
     })
     .sort((a, b) => new Date(b.timestamp || b.date || 0) - new Date(a.timestamp || a.date || 0));
 
-  const count = $("historySearchCount");
-  if (count) count.textContent = `${history.length}件表示 / 全${data.history.length}件`;
+    
+const count = $("historySearchCount");
+
+const activeHistoryCount = data.history.filter(
+  item => !item.canceled
+).length;
+
+if (count) {
+  count.textContent =
+    `${history.length}件表示 / 全${activeHistoryCount}件`;
+}
 
   if (!history.length) {
-    root.textContent = data.history.length ? "検索条件に一致する服薬記録はありません。" : "服薬記録はありません。";
+root.textContent = activeHistoryCount
+  ? "検索条件に一致する服薬記録はありません。"
+  : "服薬記録はありません。";
+
     return;
   }
 

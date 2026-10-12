@@ -2532,3 +2532,63 @@ input[type="date"] {
     max-width: 100%;
   }
 }
+
+/* ========================================
+   クイズ・服薬記録一覧の見出し統一
+======================================== */
+
+#quiz .quiz-page-heading,
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 10px 0 25px;
+}
+
+/* タイトルを中央に配置 */
+#quiz .quiz-page-heading h1,
+#history .history-page-heading h1 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(28px, 5vw, 48px);
+  white-space: nowrap;
+}
+
+/* ホームへボタンを右側に配置 */
+#quiz .quiz-page-heading button,
+#history .history-page-heading button {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  width: auto;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 600px) {
+
+  #quiz .quiz-page-heading,
+  #history .history-page-heading {
+    gap: 4px;
+  }
+
+  #quiz .quiz-page-heading h1,
+  #history .history-page-heading h1 {
+    font-size: clamp(21px, 5.5vw, 28px);
+  }
+
+  #quiz .quiz-page-heading button,
+  #history .history-page-heading button {
+    padding: 8px 5px;
+    min-height: 40px;
+    font-size: 11px;
+  }
+}
