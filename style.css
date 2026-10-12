@@ -2494,3 +2494,41 @@ input[type="date"] {
     min-width: 0;
   }
 }
+
+/* ========================================
+   スマホ版：服薬記録・お薬の確認
+   日付入力欄の横幅調整
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+  /* 服薬記録・お薬の確認の日付欄 */
+  #history .history-search-dates input[type="date"],
+  #drugs .history-search-dates input[type="date"],
+  #historySearchForm input[type="date"],
+  #drugSearchForm input[type="date"] {
+    display: block;
+    box-sizing: border-box;
+    width: 90%;
+    max-width: 90%;
+    min-width: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 8px 2px;
+    font-size: 16px;
+  }
+
+  /* 日付欄を入れる枠 */
+  #history .history-search-dates,
+  #drugs .history-search-dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #history .history-search-dates > *,
+  #drugs .history-search-dates > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
