@@ -1232,83 +1232,80 @@ function clearOCRSelection() {
   updateSelectedOCRCount();
 }
 
+
 /* ========================================
    定期薬の服薬タイミング解析
 ======================================== */
 
 function parseMedicationTimings(text) {
+  // 文字列を正規化
   const source = String(text ?? "")
     .normalize("NFKC")
     .replace(/\s+/g, "")
     .replace(/就寝|寝る/g, "寝")
-    .replace(/起床/g, "起");
+    .replace(/起床/g, "起")
+    .replace(/毎食/g, "朝昼夕");
+
+  // 開始文字と有効な終端文字のペア
+  const validPairs = {
+    "起": ["後"],
+    "朝": ["前", "後"],
+    "昼": ["前", "後"],
+    "食": ["間"],
+    "夕": ["前", "後"],
+    "寝": ["前"]
+  };
 
   const results = [];
   let pending = [];
 
-  function add(timing) {
-    if (!results.includes(timing)) {
-      results.push(timing);
-    }
-  }
-
-  for (
-    let i = 0;
-    i < source.length;
-    i++
-  ) {
+  // 文字列を先頭から順番に探索
+  for (let i = 0; i < source.length; i++) {
+    // 「夜間」は服薬タイミングとして扱わない
     if (source.startsWith("夜間", i)) {
       pending = [];
-      i++;
-      
-      continue;
-    }
-
-    if (source.startsWith("毎食", i)) {
-      if (!pending.includes("毎食")) {
-        pending.push("毎食");
-      }
-
       i++;
       continue;
     }
 
     const char = source[i];
 
-    if ("起朝昼食夕寝".includes(char)) {
-      if (
-        char === "食" &&
-        pending.some(value =>
-          ["朝", "昼", "夕", "毎食"]
-            .includes(value)
-        )
-      ) {
-        continue;
-      }
-
+    // 開始文字が見つかった場合
+    if (
+      Object.prototype.hasOwnProperty.call(
+        validPairs,
+        char
+      )
+    ) {
+      // 重複を避けて候補に追加
       if (!pending.includes(char)) {
         pending.push(char);
       }
-    } else if (
-      "前後間時".includes(char) &&
-      pending.length
-    ) {
+    }
+
+    // 終端文字が見つかった場合
+    else if ("前後間".includes(char)) {
+      // 保持している開始文字をすべて判定
       for (const start of pending) {
-        if (start === "毎食") {
-          ["朝", "昼", "夕"].forEach(
-            value => add(value + char)
-          );
-        } else {
-          add(start + char);
+        if (validPairs[start].includes(char)) {
+          const timing = start + char;
+
+          // 同じタイミングは重複登録しない
+          if (!results.includes(timing)) {
+            results.push(timing);
+          }
         }
       }
 
+      // この探索を終了
+      // 次の開始文字があれば再探索
       pending = [];
     }
   }
 
   return results;
 }
+
 
 /* ========================================
    OCR薬剤情報の抽出
