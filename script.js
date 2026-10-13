@@ -2283,52 +2283,33 @@ function confirmDrugRegistration() {
     }
   }
 
-  const skipped = [];
-  const toSave = [];
-
-  for (const drug of updated) {
-    if (
-      mode === "ocr" &&
-      (
-        isDuplicateDrug(drug) ||
-        toSave.some(item =>
-          item.name === drug.name &&
-          item.strength === drug.strength &&
-          item.type === drug.type &&
-          item.prescribed === drug.prescribed
-        )
-      )
-    ) {
-      skipped.push(drug.name);
-      continue;
-    }
-
-    toSave.push(drug);
-  }
-
-  if (!toSave.length) {
-    alert("すべて登録済みの薬剤と重複しています。");
-    return;
-  }
-
-  // 保存直前の重複チェック
+  // 保存対象の重複チェックを統一
 const checked = partitionRegistrationDuplicates(
   updated,
   prescribed,
   editingId
 );
 
-if (checked.duplicates.length > 0) {
+const toSave = checked.unique;
+const skipped = checked.duplicates.map(
+  drug => drug.name
+);
+
+// すべて重複している場合は保存しない
+if (toSave.length === 0) {
   alert(
-    "重複するお薬が" +
-    checked.duplicates.length +
-    "件あります。\n" +
-    "重複分は登録しません。"
+    "すべて登録済みのお薬と重複しています。\n" +
+    "新しいお薬は登録されません。"
   );
+  return;
 }
 
-if (checked.unique.length === 0) {
-  return;
+// 一部だけ重複している場合
+if (skipped.length > 0) {
+  alert(
+    "以下のお薬は登録済みのため除外します。\n\n" +
+    skipped.join("\n")
+  );
 }
 
   const oldDrugs = data.drugs.slice();
