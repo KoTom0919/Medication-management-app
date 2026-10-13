@@ -1019,7 +1019,7 @@ async function recognizeDrugImage() {
       );
 
     $("ocrText").value =
-      result.data.text.trim();
+  normalizeOCRText(result.data.text);
 
     $("ocrResults").hidden = false;
 
@@ -1232,6 +1232,18 @@ function clearOCRSelection() {
   updateSelectedOCRCount();
 }
 
+// OCRで読み取った服薬タイミングの誤認識を補正
+function normalizeOCRText(text) {
+  return String(text || "")
+    // 全角・半角スペース、タブを削除（改行は維持）
+    .replace(/[^\S\r\n]+/g, "")
+
+    // 「夕」を「タ」と誤認識した場合の補正
+    .replace(/タ食後/g, "夕食後")
+    .replace(/タ食前/g, "夕食前")
+    .replace(/タ食直前/g, "夕食直前")
+    .replace(/タ食直後/g, "夕食直後");
+}
 
 /* ========================================
    定期薬の服薬タイミング解析
