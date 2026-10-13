@@ -1064,8 +1064,8 @@ function getOCRBlocks() {
   const strengthRE =
     /\d[\d.\s]*(?:mg|μg|mcg|g)(?![a-z])/i;
 
-  const quantityRE =
-    /(?:内\s*服|屯\s*服|頓\s*服)\s*[/／]\s*調\s*剤\s*数\s*量\s*:/;
+    const quantityRE =
+  /(?:内\s*服|屯\s*服|頓\s*服|忠\s*服)\s*[/／]\s*調\s*剤\s*数\s*量\s*:/;
 
   for (const line of lines) {
     const isStart =
@@ -1101,8 +1101,8 @@ function getOCRBlocks() {
   return normalizedBlocks.filter(block => {
     // 調剤数量の項目以降を抽出する
     const quantityMatch = block.match(
-      /(?:内服|屯服|頓服)[/／]調剤数量:/
-    );
+  /(?:内服|屯服|頓服|忠服)[/／]調剤数量:/
+);
 
     if (!quantityMatch) {
       return false;
@@ -1362,8 +1362,8 @@ function extractPrescriptionDetails(block) {
   }
 
   const quantityMatch = text.match(
-    /(?:内服|屯服|頓服)[/／]調剤数量:/
-  );
+  /(?:内服|屯服|頓服|忠服)[/／]調剤数量:/
+);
 
   if (!quantityMatch) {
     result.warnings.push(
@@ -1387,8 +1387,8 @@ function extractPrescriptionDetails(block) {
   );
 
   const explicitPrn =
-    /(?:屯服|頓服)[/／]調剤数量:/
-      .test(quantityMatch[0]);
+  /(?:屯服|頓服|忠服)[/／]調剤数量:/
+    .test(quantityMatch[0]);
 
   const likelyPrn =
     explicitPrn ||
