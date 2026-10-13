@@ -1441,13 +1441,23 @@ function extractPrescriptionDetails(block) {
     result.total =
       quantity ? quantity[1] : "";
 
-    result.timings =
-      parseMedicationTimings(
-        rest.slice(
-          dayMatch.index +
-          dayMatch[0].length
-        )
-      );
+    
+/* ========================================
+   服薬タイミングの抽出
+======================================== */
+
+// 「〇日分」より後ろを優先して探索
+const timingText = rest.slice(
+  dayMatch.index + dayMatch[0].length
+);
+
+result.timings = parseMedicationTimings(timingText);
+
+// 見つからない場合は調剤数量以降を再探索
+if (result.timings.length === 0) {
+  result.timings = parseMedicationTimings(rest);
+}
+
   } else {
     result.warnings.push(
       "処方日数が見つかりません。"
