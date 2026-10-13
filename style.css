@@ -2713,3 +2713,33 @@ input[type="date"] {
     height: 200px;
   }
 }
+/* 服薬記録のタイトル */
+.medication-record-heading h2 {
+  font-size: clamp(27px, 4.5vw, 38px);
+  font-weight: 700;
+}
+
+/* 服薬記録の「記録を確認する」ボタン */
+.medication-record-heading button {
+  font-size: 18px;
+  min-height: 60px;
+  padding: 14px 22px;
+}
+
+/* クイズの背景色を淡い紫色に変更 */
+.token-panel {
+  background: #f0e5fa;
+  border: 1px solid #d7b9ed;
+  border-radius: 25px;
+}
+
+/* クイズのタイトル・文字色 */
+.token-panel h2,
+.token-panel .token-summary strong {
+  color: #7448a0;
+}
+
+/* クイズのボタン */
+.token-panel button {
+  border-color: #b995d5;
+}
