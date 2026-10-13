@@ -262,11 +262,18 @@
             </div>
 
             <!-- OCR読み取り -->
+
             <div class="panel yellow">
                 <h2>画像からお薬を読み取る</h2>
+
+                <p class="hint" style="text-align: center;">
+                    ※マイナポータルの薬の画面をスクリーンショットで撮ったものを添付してください
+                </p>
+
                 <label for="drugImage">
                     処方薬一覧の画像を選択
                 </label>
+
                 <input type="file" id="drugImage" accept="image/*" onchange="previewImage(this)">
                 <img id="preview" alt="選択した処方薬の画像" hidden>
                 <button type="button" id="ocrButton" onclick="recognizeDrugImage()">
