@@ -2713,18 +2713,6 @@ input[type="date"] {
     height: 200px;
   }
 }
-/* 服薬記録のタイトル */
-.medication-record-heading h2 {
-  font-size: clamp(27px, 4.5vw, 38px);
-  font-weight: 700;
-}
-
-/* 服薬記録の「記録を確認する」ボタン */
-.medication-record-heading button {
-  font-size: 18px;
-  min-height: 60px;
-  padding: 14px 22px;
-}
 
 /* クイズの背景色を淡い紫色に変更 */
 .token-panel {
@@ -2742,4 +2730,25 @@ input[type="date"] {
 /* クイズのボタン */
 .token-panel button {
   border-color: #b995d5;
+}
+
+
+/* 服薬記録一覧ページのタイトル */
+#history .history-page-heading h1 {
+  font-size: clamp(32px, 5vw, 52px);
+}
+
+/* 服薬記録一覧ページの「ホームへ」ボタン */
+#history .history-page-heading button {
+  font-size: 18px;
+  min-height: 54px;
+  padding: 12px 22px;
+}
+
+
+/* 服薬記録一覧ページのタイトルを中央寄せ */
+#history .history-page-heading h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  text-align: center;
+  flex: 1;
 }
