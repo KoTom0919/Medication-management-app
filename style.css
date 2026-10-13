@@ -2752,3 +2752,48 @@ input[type="date"] {
   flex: 1;
   min-width: 0;
 }
+
+/* ========================================
+   服薬記録一覧の見出し配置を修正
+======================================== */
+
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#history .history-page-heading h1 {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: center;
+  min-width: 0;
+  margin: 0;
+}
+
+#history .history-page-heading button {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+
+/* スマートフォンでも同じ配置 */
+@media screen and (max-width: 600px) {
+  #history .history-page-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+/* OCRで認識した文字列を確認できるようにする */
+#ocrText,
+label[for="ocrText"] {
+  display: block !important;
+}
+
+#ocrText {
+  width: 100%;
+  min-height: 200px;
+  font-size: 14px;
+}
