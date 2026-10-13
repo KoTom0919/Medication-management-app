@@ -2592,3 +2592,124 @@ input[type="date"] {
     font-size: 11px;
   }
 }
+
+/* ========================================
+   追加機能
+   今日は何の日・データ移行・アプリ共有
+======================================== */
+
+/* 今日は何の日：表示エリア */
+.today-message {
+  width: 100%;
+  margin: 8px 0 18px;
+  padding: 14px 12px;
+  border: 1px solid #8fbd7e;
+  border-radius: 14px;
+  background: #e7f3e1;
+  color: #386c2b;
+  text-align: center;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* オフの場合は非表示 */
+.today-message[hidden] {
+  display: none !important;
+}
+
+/* 今日は何の日：切り替えスイッチ */
+#home .header-quiz-area .token-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  color: #345e9e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* データ移行・アプリ共有：横並び */
+.home-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  width: 100%;
+  margin: 14px 0 18px;
+}
+
+.home-tools button {
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  padding: 12px 8px;
+  border: 1px solid #4778c7;
+  border-radius: 10px;
+  background: #f1f6fc;
+  color: #203457;
+  font-size: 16px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.home-tools button:hover {
+  background: #e3f0ff;
+}
+
+/* アプリ共有：QRコード */
+.share-qr {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  margin: 12px auto;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+/* モーダル内のURL表示 */
+#modalBody input[type="text"],
+#modalBody input[type="url"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* スマートフォン対応 */
+@media screen and (max-width: 600px) {
+
+  .today-message {
+    padding: 12px 10px;
+    margin: 6px 0 14px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  #home .header-quiz-area .token-toggle {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .home-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0 16px;
+  }
+
+  .home-tools button {
+    min-height: 52px;
+    padding: 10px 5px;
+    font-size: 14px;
+  }
+
+  .share-qr {
+    width: 200px;
+    height: 200px;
+  }
+}

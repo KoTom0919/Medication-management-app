@@ -6,8 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>通院アプリ</title>
-    <link rel="stylesheet" href="style.css?v=20261012fix">
-    <script src="script.js?v=20261012fix"></script>
+    <link rel="stylesheet" href="style.css?v=20261013new">
+    <script src="script.js?v=20261013new"></script>
 </head>
 
 <body>
@@ -35,12 +35,14 @@
                 </div>
                 <div class="header-quiz-area">
                     <label class="token-toggle">
-                        <span>クイズ</span>
-                        <input id="tokenEnabled" type="checkbox" onchange="toggleTokenMode(this.checked)" role="switch">
+                        <span>今日は何の日</span>
+                        <input id="todayEnabled" type="checkbox" onchange="toggleTodayFeature(this.checked)" role="switch">
                         <span class="token-switch" aria-hidden="true"></span>
                     </label>
                 </div>
             </header>
+
+            <div id="todayMessage" class="today-message" hidden aria-live="polite"></div>
 
             <div class="panel green">
                 <div class="medication-record-heading">
@@ -64,6 +66,11 @@
                         <span>確認</span>
                     </button>
                 </div>
+            </div>
+
+            <div class="home-tools two">
+                <button type="button" onclick="openTransferDialog()">データ移行</button>
+                <button type="button" onclick="openShareDialog()">アプリを共有</button>
             </div>
 
             <div id="tokenHome" class="panel token-panel" hidden>

@@ -3419,6 +3419,39 @@ function initTokenState() {
   saveData();
 }
 
+
+/* クイズを常時有効化 */
+data.token.enabled = true;
+saveData();
+
+/* 今日は何の日を読み込む */
+await loadTodayTopics();
+
+const todaySwitch =
+  document.getElementById("todayEnabled");
+
+if (todaySwitch) {
+  todaySwitch.checked =
+    localStorage.getItem(TODAY_SWITCH_KEY) === "true";
+}
+
+renderTodayMessage();
+
+/* 日付が変わったときに表示を更新 */
+setInterval(() => {
+  const d = new Date();
+
+  const key =
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0");
+
+  if (key !== lastTodayKey) {
+    renderTodayMessage();
+  }
+}, 60000);
+
+
 /* ========================================
    ポイント残高
 ======================================== */
@@ -3804,3 +3837,312 @@ document.addEventListener(
   "DOMContentLoaded",
   initializeApp
 );
+
+
+/* ========================================
+   今日は何の日
+======================================== */
+
+const TODAY_SWITCH_KEY = "clinicTodayEnabledV1";
+
+let todayTopics = {};
+let lastTodayKey = "";
+
+async function loadTodayTopics() {
+  try {
+    const response = await fetch("today.json", {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const parsed = await response.json();
+
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error("JSONの形式が不正です");
+    }
+
+    todayTopics = parsed;
+
+  } catch (error) {
+    console.warn(
+      "today.json を読み込めませんでした",
+      error
+    );
+
+    todayTopics = {};
+  }
+}
+
+function toggleTodayFeature(enabled) {
+  localStorage.setItem(
+    TODAY_SWITCH_KEY,
+    String(!!enabled)
+  );
+
+  renderTodayMessage();
+}
+
+function renderTodayMessage() {
+  const area = document.getElementById("todayMessage");
+
+  if (!area) return;
+
+  const enabled =
+    localStorage.getItem(TODAY_SWITCH_KEY) === "true";
+
+  const sw = document.getElementById("todayEnabled");
+
+  if (sw) {
+    sw.checked = enabled;
+  }
+
+  area.hidden = !enabled;
+
+  if (!enabled) return;
+
+  const date = new Date();
+
+  const key =
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0");
+
+  const entry = todayTopics[key];
+
+  const messages = Array.isArray(entry)
+    ? entry
+    : typeof entry === "string"
+      ? [entry]
+      : [];
+
+  area.textContent = messages.length
+    ? messages.join(" ／ ")
+    : "今日は何の日？（この日の登録はありません）";
+
+  lastTodayKey = key;
+}
+
+
+/* ========================================
+   データ移行
+======================================== */
+
+function openTransferDialog() {
+  const body = document.getElementById("modalBody");
+
+  body.replaceChildren();
+
+  const note = document.createElement("p");
+
+  note.textContent =
+    "薬・服薬記録・メモ・クイズの進行状況を" +
+    "JSONファイルで移行します。" +
+    "読み込みは現在のデータをすべて置き換えます。";
+
+  const exportButton = document.createElement("button");
+
+  exportButton.type = "button";
+  exportButton.textContent = "データを書き出す";
+  exportButton.onclick = exportClinicData;
+
+  const label = document.createElement("label");
+
+  label.textContent =
+    "データを読み込む（JSONファイルを選択）";
+
+  const input = document.createElement("input");
+
+  input.type = "file";
+  input.accept = ".json,application/json";
+
+  input.onchange = () => importClinicData(input);
+
+  label.append(input);
+
+  body.append(note, exportButton, label);
+
+  document.getElementById("modalTitle").textContent =
+    "データ移行";
+
+  document.getElementById("modal")
+    .classList.remove("hidden");
+}
+
+function exportClinicData() {
+  const payload = {
+    format: "clinicAppBackup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: data
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+
+  a.download =
+    "服薬管理バックアップ_" +
+    new Date().toISOString().slice(0, 10) +
+    ".json";
+
+  document.body.append(a);
+
+  a.click();
+  a.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 30000);
+}
+
+async function importClinicData(input) {
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  try {
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error(
+        "20MB以下のファイルを選択してください"
+      );
+    }
+
+    const parsed = JSON.parse(await file.text());
+
+    if (
+      parsed?.format !== "clinicAppBackup" ||
+      parsed.version !== 1
+    ) {
+      throw new Error(
+        "このアプリで書き出したバックアップではありません"
+      );
+    }
+
+    const restored = parsed.data;
+
+    if (
+      !restored ||
+      typeof restored !== "object" ||
+      !Array.isArray(restored.drugs) ||
+      !Array.isArray(restored.history) ||
+      !Array.isArray(restored.memos)
+    ) {
+      throw new Error(
+        "バックアップ内のデータ形式が正しくありません"
+      );
+    }
+
+    const confirmed = confirm(
+      "現在の薬・服薬記録・メモ・クイズ進行状況を" +
+      "バックアップで上書きします。" +
+      "元に戻せません。続行しますか？"
+    );
+
+    if (!confirmed) return;
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(restored)
+    );
+
+    alert(
+      "読み込みました。画面を再読み込みします。"
+    );
+
+    location.reload();
+
+  } catch (error) {
+    alert(
+      "読み込みに失敗しました：" + error.message
+    );
+
+  } finally {
+    input.value = "";
+  }
+}
+
+
+/* ========================================
+   アプリ共有
+======================================== */
+
+function openShareDialog() {
+  const appUrl =
+    "https://kotom0919.github.io/Medication-management-app/";
+
+  const body = document.getElementById("modalBody");
+
+  body.replaceChildren();
+
+  const url = document.createElement("input");
+
+  url.type = "text";
+  url.readOnly = true;
+  url.value = appUrl;
+
+  url.setAttribute(
+    "aria-label",
+    "アプリのURL"
+  );
+
+  const copy = document.createElement("button");
+
+  copy.type = "button";
+  copy.textContent = "URLをコピー";
+
+  copy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(appUrl);
+
+      alert("URLをコピーしました");
+
+    } catch (error) {
+      url.select();
+
+      alert(
+        "URLを選択しました。コピーしてください"
+      );
+    }
+  };
+
+  const qr = document.createElement("img");
+
+  qr.src =
+    "https://api.qrserver.com/v1/create-qr-code/" +
+    "?size=240x240&data=" +
+    encodeURIComponent(appUrl);
+
+  qr.alt = "アプリのURLのQRコード";
+  qr.width = 240;
+  qr.height = 240;
+  qr.className = "share-qr";
+
+  const hint = document.createElement("p");
+
+  hint.className = "hint";
+
+  hint.textContent =
+    "QRコードの表示にはインターネット接続が必要です。";
+
+  body.append(url, copy, qr, hint);
+
+  document.getElementById("modalTitle").textContent =
+    "アプリを共有";
+
+  document.getElementById("modal")
+    .classList.remove("hidden");
+}
