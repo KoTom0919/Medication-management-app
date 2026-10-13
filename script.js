@@ -3419,39 +3419,6 @@ function initTokenState() {
   saveData();
 }
 
-
-/* クイズを常時有効化 */
-data.token.enabled = true;
-saveData();
-
-/* 今日は何の日を読み込む */
-await loadTodayTopics();
-
-const todaySwitch =
-  document.getElementById("todayEnabled");
-
-if (todaySwitch) {
-  todaySwitch.checked =
-    localStorage.getItem(TODAY_SWITCH_KEY) === "true";
-}
-
-renderTodayMessage();
-
-/* 日付が変わったときに表示を更新 */
-setInterval(() => {
-  const d = new Date();
-
-  const key =
-    String(d.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(d.getDate()).padStart(2, "0");
-
-  if (key !== lastTodayKey) {
-    renderTodayMessage();
-  }
-}, 60000);
-
-
 /* ========================================
    ポイント残高
 ======================================== */
@@ -3479,7 +3446,6 @@ function toggleTokenMode(enabled) {
 function renderTokenUI() {
   const t = data.token;
 
-  $("tokenEnabled").checked = !!t.enabled;
   $("tokenHome").hidden = !t.enabled;
 
   $("tokenSummary").textContent =
@@ -3752,12 +3718,6 @@ async function initializeApp() {
       error.message
     );
 
-    const quizSwitch = $("tokenEnabled");
-
-    if (quizSwitch) {
-      quizSwitch.disabled = true;
-    }
-
     const quizHome = $("tokenHome");
 
     if (quizHome) {
@@ -3778,16 +3738,29 @@ async function initializeApp() {
     ];
   }
 
-  initTokenState();
 
-  if (
-    TOKEN_QUESTIONS[0]?.id === "unavailable"
-  ) {
-    data.token.enabled = false;
-  }
+initTokenState();
 
-  renderTokenUI();
-  updateClock();
+/* クイズを常時有効化 */
+data.token.enabled = true;
+
+/* 今日は何の日を読み込む */
+await loadTodayTopics();
+renderTodayMessage();
+
+/* 日付が変わったときに表示を更新 */
+setInterval(renderTodayMessage, 60000);
+
+/* クイズの問題が読み込めなかった場合 */
+if (
+  TOKEN_QUESTIONS[0]?.id === "unavailable"
+) {
+  data.token.enabled = false;
+}
+
+renderTokenUI();
+updateClock();
+
 
   setInterval(
     updateClock,
