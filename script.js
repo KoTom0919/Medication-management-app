@@ -2141,6 +2141,31 @@ function showDrugRegistrationReview() {
     return;
   }
 
+  // 処方日確定後に重複チェック
+const checked = partitionRegistrationDuplicates(
+  pendingDrugRegistration.drugs,
+  date,
+  pendingDrugRegistration.editingId
+);
+
+if (checked.duplicates.length > 0) {
+  const names = checked.duplicates
+    .map(drug => `${drug.name} ${drug.strength}`)
+    .join("\n");
+
+  alert(
+    "すでに登録されているお薬があります。\n\n" +
+    names +
+    "\n\n重複するお薬は登録しません。"
+  );
+
+  if (checked.unique.length === 0) {
+    return;
+  }
+
+  pendingDrugRegistration.drugs = checked.unique;
+}
+
   pendingDrugRegistration.prescribed = date;
 
   const body = $("modalBody");
@@ -2285,6 +2310,26 @@ function confirmDrugRegistration() {
     alert("すべて登録済みの薬剤と重複しています。");
     return;
   }
+
+  // 保存直前の重複チェック
+const checked = partitionRegistrationDuplicates(
+  updated,
+  prescribed,
+  editingId
+);
+
+if (checked.duplicates.length > 0) {
+  alert(
+    "重複するお薬が" +
+    checked.duplicates.length +
+    "件あります。\n" +
+    "重複分は登録しません。"
+  );
+}
+
+if (checked.unique.length === 0) {
+  return;
+}
 
   const oldDrugs = data.drugs.slice();
 
@@ -4137,4 +4182,79 @@ function openShareDialog() {
 
   document.getElementById("modal")
     .classList.remove("hidden");
+}
+// 薬剤の重複判定用キーを作成
+function drugRegistrationKey(drug) {
+  const norm = value =>
+    String(value ?? "")
+      .normalize("NFKC")
+      .replace(/\s+/g, "");
+
+  const type =
+    drug.type === "prn" ? "prn" : "regular";
+
+  return JSON.stringify({
+    name: norm(drug.name),
+    strength: norm(drug.strength),
+    type,
+    prescribed: norm(drug.prescribed),
+
+    total: type === "regular"
+      ? norm(drug.total) : "",
+
+    prescriptionDays: type === "regular"
+      ? norm(drug.prescriptionDays) : "",
+
+    prnCount: type === "prn"
+      ? norm(drug.prnCount) : "",
+
+    timings: type === "regular"
+      ? normalizedTimings(drug).map(norm).sort()
+      : [],
+
+    prnTiming: type === "prn"
+      ? norm(drug.prnTiming) : ""
+  });
+}
+
+// 登録済みの薬と比較
+function isDuplicateDrug(drug, excludeId = "") {
+  const key = drugRegistrationKey(drug);
+
+  return data.drugs.some(existing =>
+    existing.id !== excludeId &&
+    drugRegistrationKey(existing) === key
+  );
+}
+
+// 複数薬剤の重複も確認
+function partitionRegistrationDuplicates(
+  drugs,
+  prescribed,
+  excludeId = ""
+) {
+  const unique = [];
+  const duplicates = [];
+  const seen = new Set();
+
+  for (const drug of drugs) {
+    const candidate = {
+      ...drug,
+      prescribed
+    };
+
+    const key = drugRegistrationKey(candidate);
+
+    if (
+      seen.has(key) ||
+      isDuplicateDrug(candidate, excludeId)
+    ) {
+      duplicates.push(candidate);
+    } else {
+      seen.add(key);
+      unique.push(drug);
+    }
+  }
+
+  return { unique, duplicates };
 }
