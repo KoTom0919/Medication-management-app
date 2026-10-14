@@ -2657,23 +2657,38 @@ root.textContent = activeHistoryCount
     return;
   }
 
+  
   for (const item of history) {
     const card = document.createElement("div");
-    const text = document.createElement("p");
-    text.textContent =
-      `${formatDateTime(item.timestamp || item.date)}　` +
-      `${item.drugName || item.name || "薬剤"}　` +
-      `${item.timing || ""}` +
-      `${item.canceled ? "（取消済み）" : ""}`;
-    card.append(text);
+    card.className = "history-record-card";
+
+    // 1行目：服薬日時
+    const date = document.createElement("div");
+    date.className = "history-record-date";
+    date.textContent = formatDateTime(item.timestamp || item.date);
+
+    // 2行目：薬剤名と取り消しボタン
+    const row = document.createElement("div");
+    row.className = "history-record-row";
+
+    const name = document.createElement("div");
+    name.className = "history-record-name";
+    name.textContent =
+      `${item.drugName || item.name || "薬剤"}` +
+      `${item.timing ? "（" + item.timing + "）" : ""}`;
+
+    row.append(name);
 
     if (!item.canceled) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = "記録を取り消す";
+      button.className = "history-record-cancel";
+      button.textContent = "取り消し";
       button.onclick = () => cancelMedication(item.id);
-      card.append(button);
+      row.append(button);
     }
+
+    card.append(date, row);
     root.append(card);
   }
 }

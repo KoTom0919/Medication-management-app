@@ -2797,3 +2797,46 @@ label[for="ocrText"] {
   min-height: 200px;
   font-size: 14px;
 }
+
+/* 服薬記録一覧 */
+
+.history-record-card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* 1行目：服薬日時 */
+.history-record-date {
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+/* 2行目：薬剤名と取り消し */
+.history-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* 薬剤名 */
+.history-record-name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+/* 取り消しボタン */
+.history-record-cancel {
+  flex-shrink: 0;
+  width: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
