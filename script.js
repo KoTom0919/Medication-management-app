@@ -2380,11 +2380,33 @@ function renderSlots() {
 
   const drugs = activeDrugs();
 
+  
+  // 服薬タイミングの表示順
+  const timingOrder = [
+    "起床時",
+    "朝前",
+    "朝後",
+    "昼前",
+    "昼後",
+    "夕前",
+    "夕後",
+    "寝る前"
+  ];
+
   const regular = unique(
     drugs
       .filter(drug => !isPrn(drug))
       .flatMap(normalizedTimings)
-  );
+  ).sort((a, b) => {
+    const indexA = timingOrder.indexOf(a);
+    const indexB = timingOrder.indexOf(b);
+
+    const orderA = indexA === -1 ? timingOrder.length : indexA;
+    const orderB = indexB === -1 ? timingOrder.length : indexB;
+
+    return orderA - orderB;
+  });
+
 
   const prn = unique(
     drugs
