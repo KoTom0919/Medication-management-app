@@ -1,2500 +1,278 @@
 
 "use strict";
 
-const STORAGE_KEY = "activityRecords_v1";
-const ROUTINE_STORAGE_KEY = "routineActivities_v1";
-const DAILY_MEMO_STORAGE_KEY = "dailyMemos_v1";
-const PLAN_STORAGE_KEY = "activityPlans_v1";
+const STORAGE_KEY = "clinicAppDataV1";
+const $ = id => document.getElementById(id);
 
-let records = loadJson(STORAGE_KEY, []);
-let routineActivities = loadJson(ROUTINE_STORAGE_KEY, []);
-let dailyMemos = loadJson(DAILY_MEMO_STORAGE_KEY, {});
-let plans = loadJson(PLAN_STORAGE_KEY, []);
-
-let selectedMood = null;
-let editingId = null;
-let editingPlanId = null;
-let completingPlan = null;
-let moodChart = null;
-let routineSettingsOpen = false;
-
-const dateInput = document.getElementById("recordDate");
-const timeInput = document.getElementById("recordTime");
-const activityInput = document.getElementById("activity");
-const formMessage = document.getElementById("formMessage");
-const saveButton = document.getElementById("saveButton");
-const cancelEditButton = document.getElementById("cancelEditButton");
-const timelineDateInput = document.getElementById("timelineDisplayDate");
-const graphDateInput = document.getElementById("graphDisplayDate");
-const dailyMemoInput = document.getElementById("dailyMemo");
-const dailyMemoMessage = document.getElementById("dailyMemoMessage");
-const saveDailyMemoButton = document.getElementById("saveDailyMemoButton");
-const searchMoodInput = document.getElementById("searchMood");
-
-const MOOD_SETTINGS_KEY = "moodSettings_v2";
-
-const LEGACY_MOOD_SETTINGS = {
-  min: -3,
-  max: 3,
-  step: 1,
-  method: "buttons"
-};
-
-let moodSettings = normalizeMoodSettings(
-  loadJson(MOOD_SETTINGS_KEY, LEGACY_MOOD_SETTINGS)
+const escapeHTML = value => String(value ?? "").replace(
+  /[&<>"']/g,
+  c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[c]
 );
 
-let editingMoodSettings = null;
+const createId = () =>
+  globalThis.crypto?.randomUUID?.() ||
+  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-function normalizeMoodSettings(s) {
-  const x = s || {};
-  return {
-    min: Number.isFinite(Number(x.min)) ? Number(x.min) : -3,
-    max: Number.isFinite(Number(x.max)) ? Number(x.max) : 3,
-    step: Number(x.step) > 0 ? Number(x.step) : 1,
-    method: ["buttons", "keyboard", "select", "slider"]
-      .includes(x.method) ? x.method : "buttons"
-  };
-}
-
-function settingsForRecord(record) {
-  return record.moodSettings
-    ? normalizeMoodSettings(record.moodSettings)
-    : LEGACY_MOOD_SETTINGS;
-}
-
-function normalizedMood(record) {
-  const s = settingsForRecord(record);
-  return s.max === s.min
-    ? 50
-    : (Number(record.mood) - s.min) * 100 / (s.max - s.min);
-}
-
-function validMood(value, s) {
-  if (
-    value === null ||
-    value === "" ||
-    !Number.isFinite(Number(value))
-  ) return false;
-
-  const n = Number(value);
-
-  if (n < s.min - 1e-8 || n > s.max + 1e-8) {
-    return false;
-  }
-
-  return Math.abs(
-    (n - s.min) / s.step -
-    Math.round((n - s.min) / s.step)
-  ) < 1e-6;
-}
-
-function moodValues(s) {
-  const count =
-    Math.floor((s.max - s.min) / s.step + 1e-8) + 1;
-
-  return Array.from(
-    { length: Math.min(count, 1000) },
-    (_, i) => Number((s.min + i * s.step).toPrecision(12))
-  );
-}
-
-function renderMoodInput() {
-  const root = document.getElementById("moodButtons");
-  root.replaceChildren();
-
-  const s = editingMoodSettings || moodSettings;
-  const values = moodValues(s);
-
-  root.className = "mood-buttons";
-
-  if (s.method === "buttons" && values.length <= 30) {
-    root.style.gridTemplateColumns =
-      `repeat(${Math.min(7, values.length)}, minmax(0, 1fr))`;
-
-    values.forEach(v => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.mood = String(v);
-      b.textContent = formatMood(v);
-      b.onclick = () => selectMood(v);
-      root.append(b);
-    });
-
-  } else if (s.method === "slider") {
-    root.classList.add("mood-single-input");
-
-    const range = document.createElement("input");
-    range.type = "range";
-    range.min = s.min;
-    range.max = s.min + (values.length - 1) * s.step;
-    range.step = s.step;
-
-    range.value = validMood(selectedMood, s)
-      ? selectedMood
-      : s.min;
-
-    const label = document.createElement("output");
-    label.textContent = formatMood(Number(range.value));
-
-    range.oninput = () => {
-      selectedMood = Number(range.value);
-      label.textContent = formatMood(selectedMood);
-    };
-
-    root.append(range, label);
-
-  } else if (
-    s.method === "select" ||
-    (s.method === "buttons" && values.length > 30)
-  ) {
-    root.classList.add("mood-single-input");
-
-    const select = document.createElement("select");
-    select.append(new Option("選択してください", ""));
-
-    values.forEach(v => {
-      select.append(new Option(formatMood(v), String(v)));
-    });
-
-    select.value = validMood(selectedMood, s)
-      ? String(selectedMood)
-      : "";
-
-    select.onchange = () => {
-      selectMood(
-        select.value === "" ? null : Number(select.value)
-      );
-    };
-
-    root.append(select);
-
-  } else {
-    root.classList.add("mood-single-input");
-
-    const input = document.createElement("input");
-    input.type = "number";
-    input.step = "any";
-    input.min = s.min;
-    input.max = s.max;
-    input.placeholder = `${s.min}〜${s.max}`;
-
-    input.value = selectedMood === null
-      ? ""
-      : selectedMood;
-
-    input.oninput = () => {
-      selectedMood = input.value === ""
-        ? null
-        : Number(input.value);
-    };
-
-    root.append(input);
-  }
-
-  document.getElementById("moodGuide").textContent =
-    `${s.min}〜${s.max}（間隔 ${s.step}）`;
-
-  document.querySelectorAll("#moodButtons button")
-    .forEach(b => {
-      const active =
-        selectedMood !== null &&
-        Number(b.dataset.mood) === selectedMood;
-
-      b.classList.toggle("selected", active);
-      b.setAttribute("aria-pressed", String(active));
-    });
-}
-
-const routineModal = document.getElementById("routineModal");
-const routineList = document.getElementById("routineList");
-const routineSettings = document.getElementById("routineSettings");
-const routineEditList = document.getElementById("routineEditList");
-const newRoutineInput = document.getElementById("newRoutineInput");
-
-const planActivity = document.getElementById("planActivity");
-const planDate = document.getElementById("planDate");
-const planTime = document.getElementById("planTime");
-const planRepeat = document.getElementById("planRepeat");
-
-/* =========================
-   記録入力
-========================= */
-
-document.getElementById("nowButton")
-  .addEventListener("click", setCurrentDateTime);
-
-saveButton.addEventListener("click", saveRecord);
-cancelEditButton.addEventListener("click", resetForm);
-
-timeInput.addEventListener("input", () => {
-  timeInput.value = timeInput.value
-    .replace(/[^0-9:]/g, "")
-    .slice(0, 5);
-});
-
-timeInput.addEventListener("blur", () => {
-  if (!timeInput.value.trim()) return;
-
-  const normalized = normalizeTypedTime(timeInput.value);
-  if (normalized) timeInput.value = normalized;
-});
-
-function selectMood(mood) {
-  selectedMood = mood;
-  renderMoodInput();
-}
-
-document.getElementById("openMoodSettings").onclick = () => {
-  ["min", "max", "step", "method"].forEach(k => {
-    const id = "mood" + k[0].toUpperCase() + k.slice(1);
-    document.getElementById(id).value = moodSettings[k];
-  });
-
-  document.getElementById("moodSettingsError")
-    .textContent = "";
-
-  document.getElementById("moodSettingsPanel")
-    .classList.remove("hidden");
+const today = () => {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0")
+  ].join("-");
 };
 
-document.getElementById("cancelMoodSettings").onclick = () => {
-  document.getElementById("moodSettingsPanel")
-    .classList.add("hidden");
-};
+const unique = values => [
+  ...new Set(
+    values.map(v => String(v ?? "").trim()).filter(Boolean)
+  )
+];
 
-document.getElementById("saveMoodSettings").onclick = () => {
-  const s = {
-    min: Number(document.getElementById("moodMin").value),
-    max: Number(document.getElementById("moodMax").value),
-    step: Number(document.getElementById("moodStep").value),
-    method: document.getElementById("moodMethod").value
-  };
-
-  const error = document.getElementById("moodSettingsError");
-
-  const fieldsFilled = ["moodMin", "moodMax", "moodStep"]
-    .every(id => document.getElementById(id).value.trim() !== "");
-
-  const steps = (s.max - s.min) / s.step;
-
-  if (
-    !fieldsFilled ||
-    ![s.min, s.max, s.step].every(Number.isFinite) ||
-    s.max <= s.min ||
-    s.step <= 0 ||
-    steps > 999 ||
-    Math.abs(steps - Math.round(steps)) > 1e-6
-  ) {
-    error.textContent =
-      "最大値・最小値・間隔を確認してください。" +
-      "（最大1000段階、最大値は間隔で到達する値）";
-    return;
-  }
-
-  if (!saveJson(MOOD_SETTINGS_KEY, s)) {
-    error.textContent = "設定を保存できませんでした。";
-    return;
-  }
-
-  moodSettings = s;
-  editingMoodSettings = null;
-  selectedMood = null;
-
-  renderMoodInput();
-
-  document.getElementById("moodSettingsPanel")
-    .classList.add("hidden");
-};
-
-function saveRecord() {
-  const date = dateInput.value;
-  const time = normalizeTypedTime(timeInput.value);
-  const activity = activityInput.value.trim();
-
-  if (!date) {
-    showFormMessage("日付を入力してください。");
-    return;
-  }
-
-  if (!time) {
-    showFormMessage("時刻を入力してください。");
-    return;
-  }
-
-  if (!activity) {
-    showFormMessage("活動内容を入力してください。");
-    return;
-  }
-
-  if (!validMood(
-    selectedMood,
-    editingMoodSettings || moodSettings
-  )) {
-    showFormMessage("気分を選択してください。");
-    return;
-  }
-
-  const wasEditing = editingId !== null;
-
-  const existingRecord = wasEditing
-    ? records.find(item => item.id === editingId)
-    : null;
-
-  const record = {
-    id: editingId || createRecordId(),
-    ...(existingRecord?.planId
-      ? { planId: existingRecord.planId }
-      : {}),
-    date,
-    time,
-    activity,
-    mood: selectedMood,
-    moodSettings: {
-      ...(editingMoodSettings || moodSettings)
-    }
-  };
-
-  if (wasEditing) {
-    records = records.map(item =>
-      item.id === editingId ? record : item
-    );
-  } else {
-    records.push(record);
-  }
-
-  
-  // 保存前のデータを保持する
-  const previousRecords = wasEditing
-    ? records.map(item =>
-        item.id === record.id
-          ? existingRecord
-          : item
-      )
-    : records.filter(item => item !== record);
-
-  // 保存を実行
-  const saved = saveJson(STORAGE_KEY, records);
-
-  // 保存に失敗した場合
-  if (!saved) {
-    records = previousRecords;
-
-    showFormMessage(
-      "記録を保存できませんでした。入力内容は残っています。"
-    );
-
-    return;
-  }
-
-  // 保存に成功した場合のみ画面を更新
-  renderTimeline();
-  drawGraph();
-  resetForm();
-
-
-  showFormMessage(
-    wasEditing ? "記録を更新しました。" : "記録しました。",
-    true
-  );
+function formatDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? String(value ?? "")
+    : date.toLocaleString("ja-JP");
 }
 
-function editRecord(id) {
-  const record = records.find(item => item.id === id);
-  if (!record) return;
-
-  editingId = id;
-  dateInput.value = record.date;
-  timeInput.value = record.time;
-  activityInput.value = record.activity;
-
-  editingMoodSettings = {
-    ...settingsForRecord(record)
-  };
-
-  selectMood(Number(record.mood));
-
-  saveButton.textContent = "更新する";
-  cancelEditButton.classList.remove("hidden");
-
-  showFormMessage("");
-  showPage("inputPage");
-  activityInput.focus();
-}
-
-function deleteRecord(id) {
-  const record = records.find(item => item.id === id);
-  if (!record) return;
-
-  if (!window.confirm("この記録を削除しますか？")) {
-    return;
-  }
-
-  const nextRecords = records.filter(item => item.id !== id);
-
-  const nextPlans = record.planId
-    ? plans.map(plan => plan.id === record.planId
-      ? {
-          ...plan,
-          deletedDates: [...new Set([
-            ...(Array.isArray(plan.deletedDates)
-              ? plan.deletedDates
-              : []),
-            record.date
-          ])]
-        }
-      : plan)
-    : plans;
-
-  if (
-    record.planId &&
-    !saveJson(PLAN_STORAGE_KEY, nextPlans)
-  ) return;
-
-  if (!saveJson(STORAGE_KEY, nextRecords)) {
-    if (record.planId) {
-      saveJson(PLAN_STORAGE_KEY, plans);
-    }
-    return;
-  }
-
-  records = nextRecords;
-  plans = nextPlans;
-
-  renderTimeline();
-  renderPlanList();
-  drawGraph();
-}
-
-document.getElementById("clearAllButton")
-  .addEventListener("click", clearAllRecords);
-
-function clearAllRecords() {
-  if (records.length === 0) return;
-
-  if (!window.confirm("すべての活動記録を削除しますか？")) {
-    return;
-  }
-
-  records = [];
-  saveJson(STORAGE_KEY, records);
-  renderTimeline();
-  drawGraph();
-}
-
-function resetForm() {
-  editingId = null;
-  editingMoodSettings = null;
-  activityInput.value = "";
-  selectMood(null);
-  setCurrentDateTime();
-
-  saveButton.textContent = "記録する";
-  cancelEditButton.classList.add("hidden");
-}
-
-function showFormMessage(text, success = false) {
-  formMessage.textContent = text;
-  formMessage.classList.toggle("success", success);
-}
-
-/* =========================
-   時系列
-========================= */
-
-timelineDateInput.addEventListener("change", () => {
-  document.getElementById("timelineFilterMessage").textContent = "";
-  renderTimeline();
-  loadDailyMemo(timelineDateInput.value);
-});
-
-document.getElementById("timelineResetButton")
-  .addEventListener("click", () => {
-    timelineDateInput.value = "";
-    document.getElementById("timelineFilterMessage").textContent = "";
-    renderTimeline();
-    loadDailyMemo("");
-  });
-
-function getTimelineRecords() {
-  const selectedDate = timelineDateInput.value;
-
-  return getSortedRecords().filter(record =>
-    !selectedDate || record.date === selectedDate
-  );
-}
-
-function renderTimeline() {
-  const timeline = document.getElementById("timeline");
-  const items = getTimelineRecords();
-  const pending = pendingPlans(timelineDateInput.value);
-
-  document.getElementById("recordCount").textContent =
-    `${items.length + pending.length}件`;
-
-  document.getElementById("clearAllButton")
-    .classList.toggle("hidden", records.length === 0);
-
-  if (items.length === 0 && pending.length === 0) {
-    timeline.innerHTML = `
-      <p class="empty-message">
-        この日の記録はありません。
-      </p>
-    `;
-    return;
-  }
-
-  const completedHtml = items.map(record => `
-    <article class="timeline-item">
-      <div class="record-head">
-        <time
-          class="record-date"
-          datetime="${record.date}T${getSortableTime(record.time)}"
-        >
-          ${formatDate(record.date)}
-          ${escapeHtml(record.time)}
-        </time>
-
-        <span
-          class="mood-badge"
-          style="background:${moodColor(
-            Number(record.mood),
-            settingsForRecord(record)
-          )}"
-        >
-          気分 ${formatMood(Number(record.mood))}
-        </span>
-      </div>
-
-      <p class="activity-text">
-        ${escapeHtml(record.activity)}
-      </p>
-
-      <div class="record-actions">
-        <button
-          type="button"
-          onclick="editRecord('${record.id}')"
-        >
-          編集
-        </button>
-        <button
-          type="button"
-          class="delete-button"
-          onclick="deleteRecord('${record.id}')"
-        >
-          削除
-        </button>
-      </div>
-    </article>
-  `).join("");
-
-  const pendingHtml = pending.map(({ plan, date }) => `
-    <article class="timeline-item pending-plan">
-      <div class="record-head">
-        <time class="record-date">
-          ${formatDate(date)} ${escapeHtml(plan.time)}
-        </time>
-        <span class="plan-badge">予定</span>
-      </div>
-
-      <p class="activity-text">
-        ${escapeHtml(plan.activity)}
-      </p>
-
-      <div class="record-actions">
-        <button
-          type="button"
-          data-plan-complete="${escapeHtml(plan.id)}"
-          data-date="${date}"
-        >
-          完了
-        </button>
-      </div>
-    </article>
-  `).join("");
-
-  timeline.innerHTML = completedHtml + pendingHtml;
-
-  timeline.querySelectorAll("[data-plan-complete]")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        completePlan(
-          button.dataset.planComplete,
-          button.dataset.date
-        );
-      });
-    });
-}
-
-/* =========================
-   予定
-========================= */
-
-planTime.addEventListener("input", () => {
-  planTime.value = planTime.value
-    .replace(/[^0-9:]/g, "")
-    .slice(0, 5);
-});
-
-planTime.addEventListener("blur", () => {
-  const normalized = normalizeTypedTime(planTime.value);
-  if (normalized) planTime.value = normalized;
-});
-
-function planOccurs(plan, date) {
-  if (date < plan.date) return false;
-  if (plan.repeat === "once") return date === plan.date;
-  if (plan.repeat === "daily") return true;
-
-  const start = new Date(`${plan.date}T12:00:00`);
-  const target = new Date(`${date}T12:00:00`);
-
-  return start.getDay() === target.getDay();
-}
-
-function pendingPlans(selectedDate) {
-  const dates = [];
-
-  if (selectedDate) {
-    dates.push(selectedDate);
-  } else {
-    const today = new Date();
-
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() + i
-      );
-      dates.push(formatInputDate(day));
-    }
-  }
-
-  return dates.flatMap(date =>
-    plans
-      .filter(plan =>
-        planOccurs(plan, date) &&
-        !(
-          Array.isArray(plan.deletedDates) &&
-          plan.deletedDates.includes(date)
-        ) &&
-        !records.some(record =>
-          record.planId === plan.id &&
-          record.date === date
-        )
-      )
-      .map(plan => ({ plan, date }))
-  ).sort((a, b) =>
-    `${a.date}${a.plan.time}`.localeCompare(
-      `${b.date}${b.plan.time}`
-    )
-  );
-}
-
-function resetPlanForm() {
-  editingPlanId = null;
-  planActivity.value = "";
-  planDate.value = formatInputDate(new Date());
-  planTime.value = "";
-  planRepeat.value = "once";
-
-  document.getElementById("savePlanButton").textContent =
-    "予定を登録";
-
-  document.getElementById("cancelPlanButton")
-    .classList.add("hidden");
-}
-
-function renderPlanList() {
-  const list = document.getElementById("planList");
-
-  const visiblePlans = plans.filter(plan => {
-    const deletedForDisplay =
-      Array.isArray(plan.deletedDates) &&
-      plan.deletedDates.includes(
-        plan.repeat === "once"
-          ? plan.date
-          : getToday()
-      );
-
-    const completed = records.some(record =>
-      record.planId === plan.id &&
-      (
-        plan.repeat === "once" ||
-        record.date === getToday()
-      )
-    );
-
-    return !completed && !deletedForDisplay;
-  });
-
-  const repeatLabels = {
-    once: "その日限り",
-    daily: "毎日",
-    weekly: "毎週"
-  };
-
-  list.innerHTML = visiblePlans.length
-    ? visiblePlans.map(plan => `
-        <article class="plan-list-item">
-          <strong>${escapeHtml(plan.activity)}</strong>
-          <p>
-            ${formatDate(plan.date)}
-            ${escapeHtml(plan.time)}
-            · ${repeatLabels[plan.repeat] || ""}
-          </p>
-          <div class="record-actions">
-            <button
-              type="button"
-              data-edit-plan="${escapeHtml(plan.id)}"
-            >
-              編集
-            </button>
-            <button
-              type="button"
-              class="delete-button"
-              data-delete-plan="${escapeHtml(plan.id)}"
-            >
-              削除
-            </button>
-          </div>
-        </article>
-      `).join("")
-    : '<p class="empty-message">予定はありません。</p>';
-
-  list.querySelectorAll("[data-edit-plan]")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        const plan = plans.find(
-          item => item.id === button.dataset.editPlan
-        );
-
-        if (!plan) return;
-
-        editingPlanId = plan.id;
-        planActivity.value = plan.activity;
-        planDate.value = plan.date;
-        planTime.value = plan.time;
-        planRepeat.value = plan.repeat;
-
-        document.getElementById("savePlanButton")
-          .textContent = "予定を更新";
-
-        document.getElementById("cancelPlanButton")
-          .classList.remove("hidden");
-
-        planActivity.focus();
-      });
-    });
-
-  list.querySelectorAll("[data-delete-plan]")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        if (!window.confirm(
-          "この予定を削除しますか？完了済みの記録は残ります。"
-        )) return;
-
-        plans = plans.filter(
-          item => item.id !== button.dataset.deletePlan
-        );
-
-        saveJson(PLAN_STORAGE_KEY, plans);
-        resetPlanForm();
-        renderPlanList();
-        renderTimeline();
-      });
-    });
-}
-
-document.getElementById("savePlanButton")
-  .addEventListener("click", () => {
-    const activity = planActivity.value.trim();
-    const normalizedTime =
-      normalizeTypedTime(planTime.value);
-
-    const message =
-      document.getElementById("planMessage");
-
-    if (!activity || !planDate.value || !normalizedTime) {
-      message.textContent =
-        "内容・日付と正しい時刻を入力してください。";
-      return;
-    }
-
-    const plan = {
-      id: editingPlanId || createRecordId(),
-      activity,
-      date: planDate.value,
-      time: normalizedTime,
-      repeat: planRepeat.value,
-      ...(editingPlanId
-        ? {
-            deletedDates:
-              plans.find(item =>
-                item.id === editingPlanId
-              )?.deletedDates || []
-          }
-        : {})
-    };
-
-    plans = editingPlanId
-      ? plans.map(item =>
-          item.id === editingPlanId ? plan : item
-        )
-      : [...plans, plan];
-
-    if (!saveJson(PLAN_STORAGE_KEY, plans)) {
-      message.textContent = "保存できませんでした。";
-      return;
-    }
-
-    resetPlanForm();
-    renderPlanList();
-    renderTimeline();
-
-    message.textContent = "予定を保存しました。";
-  });
-
-document.getElementById("cancelPlanButton")
-  .addEventListener("click", resetPlanForm);
-
-
-/* =========================================
-   予定完了時の気分入力
-========================================= */
-
-let selectedCompleteMood = null;
-
-function renderCompleteMoodInput() {
-  const container =
-    document.getElementById("completeMoodContainer");
-
-  const guide =
-    document.getElementById("completeMoodGuide");
-
-  const s = moodSettings;
-  const values = moodValues(s);
-
-  container.replaceChildren();
-  container.className = "mood-buttons";
-
-  guide.textContent =
-    `${s.min}〜${s.max}（間隔 ${s.step}）`;
-
-  function setCompleteMood(value) {
-    selectedCompleteMood = value;
-  }
-
-  if (s.method === "buttons" && values.length <= 30) {
-    container.style.gridTemplateColumns =
-      `repeat(${Math.min(7, values.length)}, minmax(0, 1fr))`;
-
-    values.forEach(value => {
-      const button = document.createElement("button");
-
-      button.type = "button";
-      button.textContent = formatMood(value);
-      button.dataset.mood = String(value);
-
-      button.addEventListener("click", () => {
-        setCompleteMood(value);
-
-        container.querySelectorAll("button")
-          .forEach(item => {
-            const active =
-              Number(item.dataset.mood) === value;
-
-            item.classList.toggle("selected", active);
-            item.setAttribute(
-              "aria-pressed",
-              String(active)
-            );
-          });
-      });
-
-      container.append(button);
-    });
-
-  } else if (s.method === "slider") {
-    container.classList.add("mood-single-input");
-
-    const slider = document.createElement("input");
-    slider.type = "range";
-    slider.min = String(s.min);
-    slider.max = String(s.max);
-    slider.step = String(s.step);
-    slider.value = String(s.min);
-
-    const output = document.createElement("output");
-    output.textContent = formatMood(s.min);
-
-    // 初期位置だけでは気分を確定しない
-    selectedCompleteMood = null;
-
-    slider.addEventListener("input", () => {
-      const value = Number(slider.value);
-
-      setCompleteMood(value);
-      output.textContent = formatMood(value);
-    });
-
-    container.append(slider, output);
-
-  } else if (
-    s.method === "select" ||
-    (s.method === "buttons" && values.length > 30)
-  ) {
-    container.classList.add("mood-single-input");
-
-    const select = document.createElement("select");
-
-    select.append(
-      new Option("選択してください", "")
-    );
-
-    values.forEach(value => {
-      select.append(
-        new Option(formatMood(value), String(value))
-      );
-    });
-
-    select.addEventListener("change", () => {
-      setCompleteMood(
-        select.value === ""
-          ? null
-          : Number(select.value)
-      );
-    });
-
-    container.append(select);
-
-  } else {
-    container.classList.add("mood-single-input");
-
-    const input = document.createElement("input");
-
-    input.type = "number";
-    input.step = "any";
-    input.min = String(s.min);
-    input.max = String(s.max);
-    input.placeholder = `${s.min}〜${s.max}`;
-
-    input.addEventListener("input", () => {
-      setCompleteMood(
-        input.value === ""
-          ? null
-          : Number(input.value)
-      );
-    });
-
-    container.append(input);
-  }
-}
-
-function completePlan(id, date) {
-  const plan = plans.find(item => item.id === id);
-  if (!plan) return;
-
-  completingPlan = { plan, date };
-
-  document.getElementById("completeDateLabel")
-    .textContent = `${formatDate(date)} ${plan.time}`;
-
-  document.getElementById("completeActivity")
-    .textContent = plan.activity;
-
-  setCompleteCurrentTime();
-
-  selectedCompleteMood = null;
-  renderCompleteMoodInput();
-
-  document.getElementById("completeMessage")
-    .textContent = "";
-
-  const panel = document.getElementById("completePanel");
-  panel.classList.remove("hidden");
-
-  panel.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-}
-
-document.getElementById("cancelCompleteButton")
-  .addEventListener("click", () => {
-    completingPlan = null;
-
-    document.getElementById("completePanel")
-      .classList.add("hidden");
-  });
-
-const completeTimeInput =
-  document.getElementById("completeTime");
-
-function setCompleteCurrentTime() {
-  const now = new Date();
-
-  completeTimeInput.value =
-    `${String(now.getHours()).padStart(2, "0")}:` +
-    String(now.getMinutes()).padStart(2, "0");
-}
-
-document.getElementById("completeNowButton")
-  .addEventListener("click", setCompleteCurrentTime);
-
-completeTimeInput.addEventListener("input", () => {
-  completeTimeInput.value = completeTimeInput.value
-    .replace(/[^0-9:]/g, "")
-    .slice(0, 5);
-});
-
-completeTimeInput.addEventListener("blur", () => {
-  const normalized =
-    normalizeTypedTime(completeTimeInput.value);
-
-  if (normalized) completeTimeInput.value = normalized;
-});
-
-document.getElementById("finishPlanButton")
-  .addEventListener("click", () => {
-    if (!completingPlan) return;
-
-    const completionTime =
-      normalizeTypedTime(completeTimeInput.value);
-
-    const mood = selectedCompleteMood;
-
-    if (!completionTime || !validMood(mood, moodSettings)) {
-      document.getElementById("completeMessage")
-        .textContent =
-        "正しい完了時刻と気分を入力してください。";
-      return;
-    }
-
-    const { plan, date } = completingPlan;
-
-    if (records.some(record =>
-      record.planId === plan.id &&
-      record.date === date
-    )) return;
-
-    const record = {
-      id: createRecordId(),
-      planId: plan.id,
-      date,
-      time: completionTime,
-      activity: plan.activity,
-      mood: Number(mood),
-      moodSettings: { ...moodSettings }
-    };
-
-    records.push(record);
-
-    if (!saveJson(STORAGE_KEY, records)) {
-      records.pop();
-      return;
-    }
-
-    completingPlan = null;
-
-    document.getElementById("completePanel")
-      .classList.add("hidden");
-
-    renderTimeline();
-    renderPlanList();
-    drawGraph();
-  });
-
-resetPlanForm();
-renderPlanList();
-
-/* =========================
-   日別メモ
-========================= */
-
-dailyMemoInput.addEventListener("input", () => {
-  autoResizeTextarea(dailyMemoInput);
-  dailyMemoMessage.textContent = "";
-});
-
-saveDailyMemoButton.addEventListener(
-  "click",
-  saveDailyMemo
-);
-
-function loadDailyMemo(date) {
-  const enabled = Boolean(date);
-
-  dailyMemoInput.disabled = !enabled;
-  saveDailyMemoButton.disabled = !enabled;
-
-  dailyMemoInput.value = enabled
-    ? dailyMemos[date] || ""
-    : "";
-
-  dailyMemoInput.placeholder = enabled
-    ? "体調、予定、その日の振り返りなど"
-    : "表示日を選択すると、その日のメモを入力できます";
-
-  dailyMemoMessage.textContent = "";
-  autoResizeTextarea(dailyMemoInput);
-}
-
-function saveDailyMemo() {
-  const date = timelineDateInput.value;
-
-  if (!date) {
-    dailyMemoMessage.textContent =
-      "表示日を選択してください。";
-    return;
-  }
-
-  const memo = dailyMemoInput.value.trim();
-
-  if (memo) {
-    dailyMemos[date] = memo;
-  } else {
-    delete dailyMemos[date];
-  }
-
-  const saved = saveJson(
-    DAILY_MEMO_STORAGE_KEY,
-    dailyMemos
-  );
-
-  dailyMemoMessage.textContent = saved
-    ? "保存しました。"
-    : "保存できませんでした。";
-}
-
-function autoResizeTextarea(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height =
-    `${Math.max(textarea.scrollHeight, 88)}px`;
-}
-
-/* =========================================
-   グラフ
-========================================= */
-
-const moodGraphMode =
-  document.getElementById("moodGraphMode");
-
-const graphCanvas =
-  document.getElementById("moodChart");
-
-const graphEmpty =
-  document.getElementById("graphEmpty");
-
-moodGraphMode.addEventListener("change", drawGraph);
-
-graphDateInput.addEventListener("change", () => {
-  document.getElementById("graphFilterMessage")
-    .textContent = "";
-
-  drawGraph();
-});
-
-document.getElementById("graphResetButton")
-  .addEventListener("click", () => {
-    graphDateInput.value = "";
-
-    document.getElementById("graphFilterMessage")
-      .textContent = "";
-
-    drawGraph();
-  });
-
-function getGraphRecords() {
-  const selectedDate = graphDateInput.value;
-
-  return getSortedRecords().filter(record => {
-    return !selectedDate || record.date === selectedDate;
-  });
-}
-
-
-/* =========================================
-   グラフの説明文を更新
-========================================= */
-
-function updateGraphNote() {
-  const note = document.getElementById("graphNote");
-  const mode = document.getElementById("moodGraphMode");
-
-  if (!note || !mode) return;
-
-  if (mode.value === "normalized") {
-    note.textContent =
-      "横軸：時刻　縦軸：気分（0〜100％換算）";
-  } else {
-    note.textContent =
-      `横軸：時刻　縦軸：気分（${formatMood(moodSettings.min)}〜${formatMood(moodSettings.max)}）`;
-  }
-}
-
-
-function drawGraph() {
-  if (typeof Chart === "undefined") {
-    graphEmpty.textContent =
-      "グラフライブラリを読み込めませんでした。";
-    graphEmpty.classList.remove("hidden");
-    return;
-  }
-
-  const items = getGraphRecords().filter(record =>
-    Number.isFinite(Number(record.mood))
-  );
-
-  const normalized =
-    moodGraphMode.value === "normalized";
-
-  if (moodChart) {
-    moodChart.destroy();
-    moodChart = null;
-  }
-
-  if (items.length === 0) {
-    graphCanvas.classList.add("hidden");
-    graphEmpty.classList.remove("hidden");
-    graphEmpty.textContent =
-      "表示できる記録がありません。";
-    return;
-  }
-
-  graphCanvas.classList.remove("hidden");
-  graphEmpty.classList.add("hidden");
-
-  const values = items.map(record =>
-    normalized
-      ? normalizedMood(record)
-      : Number(record.mood)
-  );
-
-  // 元の数値表示では、記録ごとの設定範囲も考慮
-  const rawMinimum = Math.min(
-    ...values,
-    ...items.map(record =>
-      settingsForRecord(record).min
-    )
-  );
-
-  const rawMaximum = Math.max(
-    ...values,
-    ...items.map(record =>
-      settingsForRecord(record).max
-    )
-  );
-
-  const yMinimum = normalized ? 0 : rawMinimum;
-  const yMaximum = normalized ? 100 : rawMaximum;
-
-  
-  // 表示日が指定されているか
-  const singleDay = Boolean(graphDateInput.value);
-
-  // 日付と時刻を数値（タイムスタンプ）に変換
-  function recordTimestamp(record) {
-    const [year, month, day] =
-      record.date.split("-").map(Number);
-
-    const [hour, minute] =
-      record.time.split(":").map(Number);
-
-    return new Date(
-      year,
-      month - 1,
-      day,
-      hour,
-      minute
-    ).getTime();
-  }
-
-  // 記録した実際の日時を横軸の位置にする
-  const points = items.map((record, index) => ({
-    x: recordTimestamp(record),
-    y: values[index]
-  }));
-
-  // 1日表示の場合は0:00〜翌日0:00を横軸にする
-  let xMinimum;
-  let xMaximum;
-
-  if (singleDay) {
-    const [year, month, day] =
-      graphDateInput.value.split("-").map(Number);
-
-    xMinimum = new Date(
-      year, month - 1, day, 0, 0
-    ).getTime();
-
-    xMaximum = new Date(
-      year, month - 1, day + 1, 0, 0
-    ).getTime();
-  }
-
-
-  const pointColors = items.map(record =>
-    moodColor(
-      Number(record.mood),
-      settingsForRecord(record)
-    )
-  );
-
-  const ctx = graphCanvas.getContext("2d");
-
-  moodChart = new Chart(ctx, {
-    type: "line",
-
-    data: {
-      datasets: [{
-        label: normalized
-          ? "気分（0〜100％換算）"
-          : "気分（元の数値）",
-
-        data: points,
-
-        borderColor: "#58a98a",
-        backgroundColor: "rgba(88,169,138,0.15)",
-
-        pointBackgroundColor: pointColors,
-        pointBorderColor: pointColors,
-
-        borderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-
-        tension: 0.15,
-        fill: false,
-        spanGaps: false
-      }]
-    },
-
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-
-      interaction: {
-        intersect: false,
-        mode: "nearest"
-      },
-
-      plugins: {
-        legend: {
-          display: false
-        },
-
-        tooltip: {
-          callbacks: {
-            title(context) {
-              const index = context[0].dataIndex;
-              const record = items[index];
-
-              return `${record.date} ${record.time}`;
-            },
-
-            label(context) {
-              const index = context.dataIndex;
-              const record = items[index];
-
-              const original =
-                formatMood(Number(record.mood));
-
-              if (!normalized) {
-                return `気分：${original}`;
-              }
-
-              const percent =
-                normalizedMood(record).toFixed(1);
-
-              return `気分：${percent}％（元の値：${original}）`;
-            },
-
-            afterLabel(context) {
-              const record = items[context.dataIndex];
-              const settings = settingsForRecord(record);
-
-              return [
-                `活動：${record.activity}`,
-                `記録時の範囲：${settings.min}〜${settings.max}`
-              ];
-            }
-          }
-        }
-      },
-
-      scales: {
-        
-        x: {
-          type: "linear",
-
-          // 1日表示では0:00〜24:00に固定
-          min: singleDay ? xMinimum : undefined,
-          max: singleDay ? xMaximum : undefined,
-
-          ticks: {
-            maxTicksLimit: singleDay ? 9 : 8,
-
-            callback(value) {
-              const date = new Date(Number(value));
-
-              if (singleDay) {
-                // 1日表示では時刻を表示
-                if (value === xMaximum) {
-                  return "24:00";
-                }
-
-                return (
-                  String(date.getHours()).padStart(2, "0") +
-                  ":" +
-                  String(date.getMinutes()).padStart(2, "0")
-                );
-              }
-
-              // 全期間表示では日付と時刻を表示
-              return (
-                String(date.getMonth() + 1).padStart(2, "0") +
-                "/" +
-                String(date.getDate()).padStart(2, "0") +
-                " " +
-                String(date.getHours()).padStart(2, "0") +
-                ":" +
-                String(date.getMinutes()).padStart(2, "0")
-              );
-            }
-          },
-
-          title: {
-            display: true,
-            text: singleDay
-              ? "時刻"
-              : "日付・時刻"
-          }
-        },
-
-
-        y: {
-          min: yMinimum,
-          max: yMaximum,
-
-          ticks: {
-            callback(value) {
-              if (normalized) {
-                return `${value}%`;
-              }
-
-              return formatMood(Number(value));
-            }
-          },
-
-          title: {
-            display: true,
-            text: normalized
-              ? "気分（％）"
-              : "気分"
-          }
-        }
-      }
-    }
-  });
-
-  const graphNote =
-    document.getElementById("graphNote");
-
-  if (graphNote) {
-    graphNote.textContent = normalized
-      ? "横軸：実際の日時　縦軸：気分（0〜100％換算）"
-      : "横軸：実際の日時　縦軸：気分（元の数値）";
-  }
-
-}
-
-  updateGraphNote();
-
-
-/* =========================================
-   検索
-========================================= */
-
-const searchStartDate =
-  document.getElementById("searchStartDate");
-
-const searchEndDate =
-  document.getElementById("searchEndDate");
-
-const searchKeyword =
-  document.getElementById("searchKeyword");
-
-const searchResults =
-  document.getElementById("searchResults");
-
-const searchMessage =
-  document.getElementById("searchMessage");
-
-const searchResultCount =
-  document.getElementById("searchResultCount");
-
-document.getElementById("searchButton")
-  .addEventListener("click", runSearch);
-
-document.getElementById("searchClearButton")
-  .addEventListener("click", () => {
-    searchStartDate.value = "";
-    searchEndDate.value = "";
-    searchKeyword.value = "";
-    searchMoodInput.value = "";
-
-    searchMessage.textContent = "";
-
-    runSearch();
-  });
-
-function runSearch() {
-  const start = searchStartDate.value;
-  const end = searchEndDate.value;
-
-  const keyword =
-    searchKeyword.value.trim().toLowerCase();
-
-  const moodValue =
-    searchMoodInput.value.trim();
-
-  if (start && end && start > end) {
-    searchMessage.textContent =
-      "終了日は開始日以降にしてください。";
-    return;
-  }
-
-  if (
-    moodValue !== "" &&
-    !Number.isFinite(Number(moodValue))
-  ) {
-    searchMessage.textContent =
-      "気分には数値を入力してください。";
-    return;
-  }
-
-  searchMessage.textContent = "";
-
-  const results = getSortedRecords().filter(record => {
-    if (start && record.date < start) return false;
-    if (end && record.date > end) return false;
-
-    if (
-      keyword &&
-      !String(record.activity || "")
-        .toLowerCase()
-        .includes(keyword)
-    ) {
-      return false;
-    }
-
-    if (moodValue !== "") {
-      if (
-        !Number.isFinite(Number(record.mood)) ||
-        Math.abs(
-          Number(record.mood) - Number(moodValue)
-        ) > 1e-8
-      ) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
-  searchResultCount.textContent =
-    `${results.length}件`;
-
-  if (results.length === 0) {
-    searchResults.innerHTML =
-      '<p class="empty-message">該当する記録はありません。</p>';
-    return;
-  }
-
-  searchResults.innerHTML = results.map(record => {
-    const settings = settingsForRecord(record);
-
-    return `
-      <article class="timeline-item">
-        <div class="record-head">
-          <time class="record-date">
-            ${formatDate(record.date)}
-            ${escapeHtml(record.time)}
-          </time>
-
-          <span
-            class="mood-badge"
-            style="background:${moodColor(
-              Number(record.mood),
-              settings
-            )}"
-          >
-            気分 ${formatMood(Number(record.mood))}
-          </span>
-        </div>
-
-        <p class="activity-text">
-          ${escapeHtml(record.activity)}
-        </p>
-
-        <p class="mood-guide">
-          記録時の設定：
-          ${settings.min}〜${settings.max}
-          （間隔 ${settings.step}）
-        </p>
-
-        <div class="record-actions">
-          <button
-            type="button"
-            data-search-edit="${escapeHtml(record.id)}"
-          >
-            編集
-          </button>
-        </div>
-      </article>
-    `;
-  }).join("");
-
-  searchResults.querySelectorAll("[data-search-edit]")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        editRecord(button.dataset.searchEdit);
-      });
-    });
-}
-
-/* =========================================
-   定期的な活動
-========================================= */
-
-document.getElementById("openRoutineButton")
-  .addEventListener("click", openRoutineModal);
-
-document.getElementById("closeRoutineButton")
-  .addEventListener("click", closeRoutineModal);
-
-document.getElementById("toggleRoutineSettingsButton")
-  .addEventListener("click", () => {
-    routineSettingsOpen = !routineSettingsOpen;
-    renderRoutineActivities();
-  });
-
-document.getElementById("addRoutineButton")
-  .addEventListener("click", addRoutineActivity);
-
-newRoutineInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") addRoutineActivity();
-});
-
-routineModal.addEventListener("click", event => {
-  if (event.target === routineModal) {
-    closeRoutineModal();
-  }
-});
-
-routineList.addEventListener("click", event => {
-  const button =
-    event.target.closest("[data-routine-index]");
-
-  if (!button) return;
-
-  const index = Number(button.dataset.routineIndex);
-
-  activityInput.value =
-    routineActivities[index] || "";
-
-  closeRoutineModal();
-  activityInput.focus();
-});
-
-routineEditList.addEventListener("change", event => {
-  const input =
-    event.target.closest("[data-routine-edit-index]");
-
-  if (!input) return;
-
-  const index = Number(input.dataset.routineEditIndex);
-  const value = input.value.trim();
-
-  if (!value) {
-    renderRoutineActivities();
-    return;
-  }
-
-  routineActivities[index] = value;
-
-  saveJson(
-    ROUTINE_STORAGE_KEY,
-    routineActivities
-  );
-
-  renderRoutineActivities();
-});
-
-routineEditList.addEventListener("click", event => {
-  const button =
-    event.target.closest("[data-routine-delete-index]");
-
-  if (!button) return;
-
-  const index = Number(button.dataset.routineDeleteIndex);
-
-  routineActivities.splice(index, 1);
-
-  saveJson(
-    ROUTINE_STORAGE_KEY,
-    routineActivities
-  );
-
-  renderRoutineActivities();
-});
-
-function openRoutineModal() {
-  routineSettingsOpen = false;
-  renderRoutineActivities();
-
-  routineModal.classList.remove("hidden");
-  routineModal.setAttribute("aria-hidden", "false");
-
-  document.body.classList.add("modal-open");
-}
-
-function closeRoutineModal() {
-  routineModal.classList.add("hidden");
-  routineModal.setAttribute("aria-hidden", "true");
-
-  document.body.classList.remove("modal-open");
-}
-
-function addRoutineActivity() {
-  const value = newRoutineInput.value.trim();
-
-  if (!value) {
-    newRoutineInput.focus();
-    return;
-  }
-
-  routineActivities.push(value);
-  newRoutineInput.value = "";
-
-  saveJson(
-    ROUTINE_STORAGE_KEY,
-    routineActivities
-  );
-
-  renderRoutineActivities();
-  newRoutineInput.focus();
-}
-
-function renderRoutineActivities() {
-  if (routineActivities.length === 0) {
-    routineList.innerHTML = `
-      <p class="routine-empty">
-        設定から、よくする活動を追加してください。
-      </p>
-    `;
-  } else {
-    routineList.innerHTML = routineActivities
-      .map((activity, index) => `
-        <button
-          type="button"
-          class="routine-choice"
-          data-routine-index="${index}"
-        >
-          ${escapeHtml(activity)}
-        </button>
-      `)
-      .join("");
-  }
-
-  routineSettings.classList.toggle(
-    "hidden",
-    !routineSettingsOpen
-  );
-
-  document.getElementById(
-    "toggleRoutineSettingsButton"
-  ).textContent = routineSettingsOpen
-    ? "設定を閉じる"
-    : "設定";
-
-  routineEditList.innerHTML = routineActivities
-    .map((activity, index) => `
-      <div class="routine-edit-row">
-        <input
-          type="text"
-          maxlength="100"
-          value="${escapeHtml(activity)}"
-          data-routine-edit-index="${index}"
-        >
-        <button
-          type="button"
-          data-routine-delete-index="${index}"
-        >
-          削除
-        </button>
-      </div>
-    `)
-    .join("");
-}
-
-/* =========================================
-   印刷する期間の選択
-========================================= */
-
-const printDialog =
-  document.getElementById("printDialog");
-
-const printStartDate =
-  document.getElementById("printStartDate");
-
-const printEndDate =
-  document.getElementById("printEndDate");
-
-const printDialogMessage =
-  document.getElementById("printDialogMessage");
-
-document.getElementById("openPrintDialogButton")
-  .addEventListener("click", () => {
-    const today = getToday();
-
-    printStartDate.value =
-      timelineDateInput.value || today;
-
-    printEndDate.value = printStartDate.value;
-
-    printDialogMessage.textContent = "";
-
-    printDialog.classList.remove("hidden");
-    printDialog.setAttribute("aria-hidden", "false");
-
-    printStartDate.focus();
-  });
-
-function closePrintDialog() {
-  printDialog.classList.add("hidden");
-  printDialog.setAttribute("aria-hidden", "true");
-}
-
-document.getElementById("cancelPrintButton")
-  .addEventListener("click", closePrintDialog);
-
-printDialog.addEventListener("click", event => {
-  if (event.target === printDialog) {
-    closePrintDialog();
-  }
-});
-
-document.getElementById("executePrintButton")
-  .addEventListener("click", () => {
-    const start = printStartDate.value;
-    const end = printEndDate.value;
-
-    if (!start || !end || start > end) {
-      printDialogMessage.textContent =
-        "開始日と終了日を正しい順序で選んでください。";
-      return;
-    }
-
-    const days = [];
-
-    const current =
-      new Date(`${start}T12:00:00`);
-
-    const last =
-      new Date(`${end}T12:00:00`);
-
-    while (
-      current <= last &&
-      days.length <= 366
-    ) {
-      days.push(formatInputDate(current));
-      current.setDate(current.getDate() + 1);
-    }
-
-    if (days.length > 366) {
-      printDialogMessage.textContent =
-        "印刷期間は366日以内にしてください。";
-      return;
-    }
-
-    document.getElementById("dailyPrintRoot")
-      .innerHTML = days.map(buildDailyPrintPage).join("");
-
-    closePrintDialog();
-
-    document.body.classList.add("print-daily");
-
-    requestAnimationFrame(() => {
-      window.print();
-    });
-  });
-
-window.addEventListener("afterprint", () => {
-  document.body.classList.remove("print-daily");
-});
-
-/* =========================================
-   1日ごとの印刷ページ
-========================================= */
-
-/* =========================================
-   1日ごとの印刷ページ
-   1ページ最大40件（左20件・右20件）
-========================================= */
-
-function buildDailyPrintPage(date) {
-  const items = getSortedRecords().filter(
-    record => record.date === date
-  );
-
-  const memo = dailyMemos[date] || "";
-
-  // 40件ずつページに分割
-  const pages = [];
-
-  for (let i = 0; i < items.length; i += 40) {
-    pages.push(items.slice(i, i + 40));
-  }
-
-  // 記録がない日も1ページ作る
-  if (pages.length === 0) {
-    pages.push([]);
-  }
-
-  // 記録1件分のHTML
-  function renderColumn(part) {
-    if (part.length === 0) {
-      return '<p class="daily-print-empty">記録なし</p>';
-    }
-
-    return part.map(record => `
-      <div class="daily-print-record">
-        <div class="daily-print-record-heading">
-          <strong>
-            ${escapeHtml(record.time)}
-          </strong>
-
-          <span>
-            気分 ${formatMood(Number(record.mood))}
-          </span>
-        </div>
-
-        <p>${escapeHtml(record.activity)}</p>
-      </div>
-    `).join("");
-  }
-
-  return pages.map((pageItems, pageIndex) => {
-    // 各ページで左20件、右20件
-    const leftItems = pageItems.slice(0, 20);
-    const rightItems = pageItems.slice(20, 40);
-
-    const pageNumber = pageIndex + 1;
-    const totalPages = pages.length;
-
-    // 記録が多い場合は文字サイズを調整
-    const recordFont = Math.max(
-      5.5,
-      Math.min(
-        8,
-        80 / Math.max(
-          10,
-          leftItems.length,
-          rightItems.length
-        )
-      )
-    );
-
-    return `
-      <section
-        class="daily-print-page"
-        style="--daily-record-font:${recordFont}pt"
-      >
-        <h1>
-          ${escapeHtml(date.replace(/-/g, "/"))}
-          活動記録表
-
-          ${totalPages > 1
-            ? `（${pageNumber}/${totalPages}）`
-            : ""}
-        </h1>
-
-        <section class="daily-print-graph">
-          <h2>グラフ</h2>
-
-          ${buildDailyGraphSvg(items)}
-        </section>
-
-        <div class="daily-print-columns">
-          <section class="daily-print-column">
-            <div class="daily-print-list">
-              ${renderColumn(leftItems)}
-            </div>
-          </section>
-
-          <section class="daily-print-column">
-            <div class="daily-print-list">
-              ${renderColumn(rightItems)}
-            </div>
-          </section>
-        </div>
-
-        <section class="daily-print-memo">
-          <h2>メモ</h2>
-
-          <p>
-            ${pageIndex === 0
-              ? (memo ? escapeHtml(memo) : "メモなし")
-              : "（メモは1ページ目に記載）"}
-          </p>
-        </section>
-      </section>
-    `;
-  }).join("");
-}
-
-
-/* =========================================
-   印刷用グラフ
-   記録時の気分設定に対応
-========================================= */
-
-function buildDailyGraphSvg(items) {
-  const left = 44;
-  const right = 716;
-  const top = 16;
-  const bottom = 177;
-
-  // 記録がない場合
-  if (items.length === 0) {
-    return `
-      <svg viewBox="0 0 750 205">
-        <rect
-          width="750"
-          height="205"
-          fill="white"
-        />
-        <text
-          x="375"
-          y="105"
-          text-anchor="middle"
-          fill="#777"
-        >
-          記録なし
-        </text>
-      </svg>
-    `;
-  }
-
-  // グラフの表示方法
-  const normalized =
-    document.getElementById("moodGraphMode")
-      .value === "normalized";
-
-  const values = items.map(item =>
-    normalized
-      ? normalizedMood(item)
-      : Number(item.mood)
-  );
-
-  const minMood = normalized
-    ? 0
-    : Math.min(
-        ...values,
-        ...items.map(item =>
-          settingsForRecord(item).min
-        )
-      );
-
-  const maxMood = normalized
-    ? 100
-    : Math.max(
-        ...values,
-        ...items.map(item =>
-          settingsForRecord(item).max
-        )
-      );
-
-  const moodSpan = Math.max(
-    1e-9,
-    maxMood - minMood
-  );
-
-  const y = mood =>
-    bottom -
-    (Number(mood) - minMood) *
-    (bottom - top) / moodSpan;
-
-  const x = time => {
-    const normalizedTime = getSortableTime(time);
-
-    const minutes =
-      Number(normalizedTime.slice(0, 2)) * 60 +
-      Number(normalizedTime.slice(3, 5));
-
-    return left +
-      minutes * (right - left) / 1440;
-  };
-
-  // 横線と縦軸の目盛り
-  const grid = Array.from(
-    { length: 7 },
-    (_, i) => minMood + moodSpan * i / 6
-  ).map(value => `
-    <line
-      x1="${left}"
-      y1="${y(value)}"
-      x2="${right}"
-      y2="${y(value)}"
-      stroke="#dde4ef"
-    />
-
-    <text
-      x="36"
-      y="${y(value) + 4}"
-      text-anchor="end"
-    >
-      ${normalized
-        ? Number(value.toFixed(1)) + "%"
-        : Number(value.toFixed(2))}
-    </text>
-  `).join("");
-
-  // 時刻の目盛り
-  const ticks = [0, 6, 12, 18, 24]
-    .map(hour => {
-      const position =
-        left + hour * (right - left) / 24;
-
-      return `
-        <line
-          x1="${position}"
-          y1="${top}"
-          x2="${position}"
-          y2="${bottom}"
-          stroke="#dde4ef"
-        />
-
-        <text
-          x="${position}"
-          y="195"
-          text-anchor="middle"
-        >
-          ${hour}:00
-        </text>
-      `;
-    }).join("");
-
-  // 折れ線
-  const points = items.map((item, index) =>
-    `${x(item.time)},${y(values[index])}`
-  ).join(" ");
-
-  // 各記録の点
-  const dots = items.map((item, index) => `
-    <circle
-      cx="${x(item.time)}"
-      cy="${y(values[index])}"
-      r="4"
-      fill="${moodColor(
-        Number(item.mood),
-        settingsForRecord(item)
-      )}"
-    />
-  `).join("");
-
-  return `
-    <svg
-      viewBox="0 0 750 205"
-      role="img"
-      aria-label="時刻に対する気分の推移"
-    >
-      <rect
-        x="0"
-        y="0"
-        width="750"
-        height="205"
-        fill="white"
-      />
-
-      ${grid}
-      ${ticks}
-
-      ${items.length > 1
-        ? `
-          <polyline
-            points="${points}"
-            fill="none"
-            stroke="#3973be"
-            stroke-width="2.5"
-          />
-        `
-        : ""}
-
-      ${dots}
-    </svg>
-  `;
-}
-
-/* =========================================
-   下部メニュー
-========================================= */
-
-document.querySelectorAll(".nav-button")
-  .forEach(button => {
-    button.addEventListener("click", () => {
-      showPage(button.dataset.page);
-    });
-  });
-
-function showPage(pageId) {
-  if (pageId === "planPage") {
-    renderPlanList();
-  }
-
-  document.querySelectorAll(".page")
-    .forEach(page => {
-      page.classList.toggle(
-        "active",
-        page.id === pageId
-      );
-    });
-
-  document.querySelectorAll(".nav-button")
-    .forEach(button => {
-      button.classList.toggle(
-        "active",
-        button.dataset.page === pageId
-      );
-    });
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-  if (pageId === "timelinePage") {
-    renderTimeline();
-    loadDailyMemo(timelineDateInput.value);
-  }
-
-  if (pageId === "graphPage") {
-    requestAnimationFrame(drawGraph);
-  }
-}
-
-/* =========================================
-   データの移行
-========================================= */
-
-const transferDialog =
-  document.getElementById("transferDialog");
-
-const transferMessage =
-  document.getElementById("transferMessage");
-
-const importDataFile =
-  document.getElementById("importDataFile");
-
-function closeTransferDialog() {
-  transferDialog.classList.add("hidden");
-  transferDialog.setAttribute("aria-hidden", "true");
-}
-
-document.getElementById("openTransferDialogButton")
-  .addEventListener("click", () => {
-    transferMessage.textContent = "";
-    transferDialog.classList.remove("hidden");
-    transferDialog.setAttribute("aria-hidden", "false");
-  });
-
-document.getElementById("closeTransferDialogButton")
-  .addEventListener("click", closeTransferDialog);
-
-transferDialog.addEventListener("click", event => {
-  if (event.target === transferDialog) {
-    closeTransferDialog();
-  }
-});
-
-document.getElementById("exportDataButton")
-  .addEventListener("click", () => {
-    const backup = {
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      records,
-      plans,
-      routineActivities,
-      dailyMemos,
-      moodSettings
-    };
-
-    const blob = new Blob(
-      [JSON.stringify(backup, null, 2)],
-      { type: "application/json" }
-    );
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download =
-      `活動記録表バックアップ_${getToday()}.json`;
-
-    document.body.append(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-
-document.getElementById("importDataButton")
-  .addEventListener("click", () => {
-    importDataFile.click();
-  });
-
-importDataFile.addEventListener("change", async () => {
-  const file = importDataFile.files[0];
-  if (!file) return;
-
+/* ========================================
+   データの読み込み・保存
+======================================== */
+
+function loadData() {
   try {
-    const text = await file.text();
-    const data = JSON.parse(text);
+    const raw = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "{}"
+    );
 
-    if (
-      !data ||
-      !Array.isArray(data.records)
-    ) {
-      throw new Error("バックアップ形式が正しくありません。");
-    }
-
-    if (!window.confirm(
-      "現在のデータをバックアップの内容で置き換えますか？"
-    )) {
-      return;
-    }
-
-    const nextRecords = data.records;
-    const nextPlans = Array.isArray(data.plans)
-      ? data.plans : [];
-
-    const nextRoutines =
-      Array.isArray(data.routineActivities)
-        ? data.routineActivities : [];
-
-    const nextMemos =
-      data.dailyMemos &&
-      typeof data.dailyMemos === "object" &&
-      !Array.isArray(data.dailyMemos)
-        ? data.dailyMemos : {};
-
-    const nextMoodSettings =
-      normalizeMoodSettings(
-        data.moodSettings || LEGACY_MOOD_SETTINGS
-      );
-
-    // 書き込み前に容量を確認
-    const updates = [
-      [STORAGE_KEY, nextRecords],
-      [PLAN_STORAGE_KEY, nextPlans],
-      [ROUTINE_STORAGE_KEY, nextRoutines],
-      [DAILY_MEMO_STORAGE_KEY, nextMemos],
-      [MOOD_SETTINGS_KEY, nextMoodSettings]
-    ];
-
-    const previousValues = updates.map(([key]) => [
-      key,
-      localStorage.getItem(key)
-    ]);
-
-    try {
-      updates.forEach(([key, value]) => {
-        localStorage.setItem(
-          key,
-          JSON.stringify(value)
-        );
-      });
-    } catch (error) {
-      previousValues.forEach(([key, value]) => {
-        try {
-          if (value === null) {
-            localStorage.removeItem(key);
-          } else {
-            localStorage.setItem(key, value);
-          }
-        } catch (_) {}
-      });
-
-      throw error;
-    }
-
-    records = nextRecords;
-    plans = nextPlans;
-    routineActivities = nextRoutines;
-    dailyMemos = nextMemos;
-    moodSettings = nextMoodSettings;
-
-    resetForm();
-    resetPlanForm();
-    renderRoutineActivities();
-    renderPlanList();
-    renderTimeline();
-    drawGraph();
-    runSearch();
-    loadDailyMemo(timelineDateInput.value);
-
-    transferMessage.textContent =
-      "データを読み込みました。";
-
+    return {
+      ...raw,
+      drugs: Array.isArray(raw.drugs) ? raw.drugs : [],
+      history: Array.isArray(raw.history) ? raw.history : [],
+      memos: Array.isArray(raw.memos) ? raw.memos : []
+    };
   } catch (error) {
-    transferMessage.textContent =
-      `読み込みに失敗しました：${error.message}`;
-  } finally {
-    importDataFile.value = "";
-  }
-});
-
-/* =========================================
-   ローカルストレージ
-========================================= */
-
-function loadJson(key, fallback) {
-  try {
-    const text = localStorage.getItem(key);
-    if (text === null) return fallback;
-
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("データ読み込みエラー", error);
-    return fallback;
+    console.error(error);
+    return { drugs: [], history: [], memos: [] };
   }
 }
 
-function saveJson(key, value) {
+let data = loadData();
+
+function saveData() {
   try {
     localStorage.setItem(
-      key,
-      JSON.stringify(value)
+      STORAGE_KEY,
+      JSON.stringify(data)
     );
     return true;
   } catch (error) {
-    console.error("データ保存エラー", error);
-    alert("データを保存できませんでした。");
+    console.error(error);
+    alert("データの保存に失敗しました。");
     return false;
   }
 }
 
-/* =========================================
-   日付・時刻
-========================================= */
+/* ========================================
+   薬剤データの共通処理
+======================================== */
 
-function getToday() {
-  return formatInputDate(new Date());
+function normalizedTimings(drug) {
+  if (Array.isArray(drug.timings)) {
+    return unique(drug.timings);
+  }
+
+  return unique(
+    typeof drug.timing === "string"
+      ? [drug.timing]
+      : []
+  );
 }
 
-function formatInputDate(date) {
+function isPrn(drug) {
+  return (
+    drug.type === "prn" ||
+    drug.drugType === "prn" ||
+    (
+      !!drug.prnTiming &&
+      normalizedTimings(drug).length === 0
+    )
+  );
+}
+
+function initialRemaining(drug) {
+  if (isPrn(drug)) {
+    return Math.max(
+      0,
+      Number(drug.prnCount) || 0
+    );
+  }
+
+  const days = Number(drug.prescriptionDays) || 0;
+  const times = normalizedTimings(drug).length;
+
+  return Math.max(0, days * times);
+}
+
+function migrateDrugs() {
+  let changed = false;
+
+  for (const drug of data.drugs) {
+    if (!drug.id) {
+      drug.id = createId();
+      changed = true;
+    }
+
+    if (!drug.type) {
+      drug.type = isPrn(drug)
+        ? "prn"
+        : "regular";
+      changed = true;
+    }
+
+    if (!Array.isArray(drug.timings)) {
+      drug.timings = normalizedTimings(drug);
+      changed = true;
+    }
+
+    if (
+      drug.remaining === undefined ||
+      drug.remaining === null ||
+      drug.remaining === ""
+    ) {
+      drug.remaining = initialRemaining(drug);
+      changed = true;
+    }
+
+    if (
+      Number(drug.remaining) === 0 &&
+      !drug.isPast
+    ) {
+      drug.isPast = true;
+      changed = true;
+    }
+  }
+
+  if (changed) saveData();
+}
+
+migrateDrugs();
+
+/* ========================================
+   ページ切り替え
+======================================== */
+
+function showPage(pageId) {
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.toggle(
+      "active",
+      page.id === pageId
+    );
+  });
+
+  if (pageId === "home") { renderSlots(); renderTokenUI(); }
+  if (pageId === "quiz") { if (!data.token.enabled) {showPage("home");return;} renderTokenUI(); }
+  if (pageId === "drugs") renderDrugs();
+  if (pageId === "history") renderHistory();
+  if (pageId === "settings") renderSettings();
+  if (pageId === "memos") renderMemos();
+
+  window.scrollTo(0, 0);
+}
+
+/* ========================================
+   時計
+======================================== */
+
+
+/* ========================================
+   グラスモーフィズム時計
+======================================== */
+
+function updateClock() {
+  const now = new Date();
+
+  const weekdays = [
+    "日曜日", "月曜日", "火曜日",
+    "水曜日", "木曜日", "金曜日", "土曜日"
+  ];
+
+  const pad = (number) =>
+    String(number).padStart(2, "0");
+
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  const seconds = pad(now.getSeconds());
+
+  const weekday = weekdays[now.getDay()];
+
+  const dateText =
+    `${now.getFullYear()}年` +
+    `${now.getMonth() + 1}月` +
+    `${now.getDate()}日（${weekday[0]}）`;
+
+  const weekdayElement =
+    document.getElementById("clockWeekday");
+
+  const timeElement =
+    document.getElementById("clockHourMinute");
+
+  const secondsElement =
+    document.getElementById("clockSeconds");
+
+  const dateElement =
+    document.getElementById("clockDate");
+
+  if (weekdayElement) {
+    weekdayElement.textContent = weekday;
+  }
+
+  if (timeElement) {
+    timeElement.textContent =
+      `${hours}:${minutes}`;
+  }
+
+  if (secondsElement) {
+    secondsElement.textContent = `:${seconds}`;
+  }
+
+  if (dateElement) {
+    dateElement.textContent = dateText;
+  }
+}
+
+/* ========================================
+
+   薬がなくなる日の計算
+======================================== */
+
+function getEndDate(prescribed, days) {
+  if (
+    !prescribed ||
+    !Number.isInteger(Number(days)) ||
+    Number(days) <= 0
+  ) {
+    return "";
+  }
+
+  const [y, m, d] = prescribed
+    .split("-")
+    .map(Number);
+
+  if (!y || !m || !d) return "";
+
+  const date = new Date(y, m - 1, d);
+
+  date.setDate(
+    date.getDate() + Number(days)
+  );
+
   return [
     date.getFullYear(),
     String(date.getMonth() + 1).padStart(2, "0"),
@@ -2502,446 +280,4035 @@ function formatInputDate(date) {
   ].join("-");
 }
 
-function formatDate(value) {
-  if (!value) return "";
-
-  const parts = value.split("-");
-  if (parts.length !== 3) return value;
-
-  return `${Number(parts[1])}/${Number(parts[2])}`;
+function calculateEndDate() {
+  // 処方日と終了日は登録確認画面で計算・表示します。
 }
 
-function setCurrentDateTime() {
-  const now = new Date();
+/* ========================================
+   定期薬の服薬タイミング
+======================================== */
 
-  dateInput.value = formatInputDate(now);
+function createTimingInput(
+  value = "",
+  target = $("timingFields")
+) {
+  const row = document.createElement("div");
+  row.className = "timing-field";
 
-  timeInput.value =
-    `${String(now.getHours()).padStart(2, "0")}:` +
-    String(now.getMinutes()).padStart(2, "0");
-}
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "timing-input";
+  input.placeholder = "例：朝後";
+  input.value = value;
 
-function normalizeTypedTime(value) {
-  const text = String(value || "").trim();
-
-  if (!text) return null;
-
-  let hours;
-  let minutes;
-
-  if (text.includes(":")) {
-    const parts = text.split(":");
-
-    if (
-      parts.length !== 2 ||
-      !/^\d{1,2}$/.test(parts[0]) ||
-      !/^\d{1,2}$/.test(parts[1])
-    ) {
-      return null;
+  input.addEventListener("input", () => {
+    if (target === $("timingFields")) {
+      calculateInitialRemaining();
     }
+  });
 
-    hours = Number(parts[0]);
-    minutes = Number(parts[1]);
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.textContent = "削除";
 
+  remove.onclick = () => {
+    row.remove();
+
+    if (target === $("timingFields")) {
+      calculateInitialRemaining();
+    }
+  };
+
+  row.append(input, remove);
+  target.append(row);
+
+  return row;
+}
+
+function addTimingField(value = "") {
+  createTimingInput(value);
+  calculateInitialRemaining();
+}
+
+function setTimingFields(values = []) {
+  $("timingFields").replaceChildren();
+
+  const items = values.length
+    ? values
+    : [""];
+
+  items.forEach(value => {
+    createTimingInput(value);
+  });
+}
+
+function readTimingFields(
+  container = $("timingFields")
+) {
+  return unique(
+    [...container.querySelectorAll(".timing-input")]
+      .map(input => input.value)
+  );
+}
+
+/* ========================================
+   残数の自動計算
+======================================== */
+
+let remainingManuallyEdited = false;
+
+function calculateInitialRemaining(force = false) {
+  const type = $("drugType").value;
+
+  let calculated = 0;
+
+  if (type === "prn") {
+    calculated = Math.max(
+      0,
+      Number($("prnCount").value) || 0
+    );
   } else {
-    if (!/^\d{1,4}$/.test(text)) {
-      return null;
-    }
+    const days =
+      Number($("prescriptionDays").value) || 0;
 
-    const padded = text.padStart(4, "0");
+    const times = readTimingFields().length;
 
-    hours = Number(padded.slice(0, 2));
-    minutes = Number(padded.slice(2));
+    calculated = Math.max(
+      0,
+      days * times
+    );
+  }
+
+  if (force || !remainingManuallyEdited) {
+    $("remaining").value = calculated;
+    remainingManuallyEdited = false;
+  }
+
+  return calculated;
+}
+
+/* ========================================
+   定期薬・頓服薬の切り替え
+======================================== */
+
+function updateDrugTypeFields() {
+  const prn = $("drugType").value === "prn";
+
+  $("regularFields").hidden = prn;
+  $("prnFields").hidden = !prn;
+
+  calculateEndDate();
+  calculateInitialRemaining();
+}
+
+/* ========================================
+   薬剤登録フォーム
+======================================== */
+
+let selectedDrugImage = null;
+let ocrWorker = null;
+let batchDraft = [];
+
+function resetDrugForm() {
+  $("drugForm").reset();
+
+  $("drugId").value = "";
+  $("drugType").value = "regular";
+  $("isPast").checked = false;
+
+  setTimingFields();
+
+  remainingManuallyEdited = false;
+  updateDrugTypeFields();
+
+  $("drugImage").value = "";
+  $("preview").hidden = true;
+  $("ocrStatus").textContent = "";
+  $("ocrResults").hidden = true;
+  $("ocrText").value = "";
+  $("ocrDrugList").replaceChildren();
+
+  cancelBatchRegistration();
+
+  selectedDrugImage = null;
+}
+
+function openNewDrugForm() {
+  resetDrugForm();
+  showPage("drugform");
+}
+
+function readDrugForm() {
+  const type = $("drugType").value;
+
+  const days =
+    type === "regular" &&
+    $("prescriptionDays").value !== ""
+      ? Number($("prescriptionDays").value)
+      : null;
+
+  const prnCount =
+    type === "prn" &&
+    $("prnCount").value !== ""
+      ? Number($("prnCount").value)
+      : null;
+
+  const remaining =
+    $("remaining").value === ""
+      ? calculateInitialRemaining()
+      : Number($("remaining").value);
+
+  return {
+    name: $("drugName").value.trim(),
+    strength: $("strength").value.trim(),
+    type,
+
+    total:
+      type === "regular"
+        ? $("total").value.trim()
+        : "",
+
+    prescriptionDays: days,
+    prnCount,
+
+    timings:
+      type === "regular"
+        ? readTimingFields()
+        : [],
+
+    prnTiming:
+      type === "prn"
+        ? $("prnTiming").value.trim()
+        : "",
+
+    prescribed: "",
+    endDate: "",
+
+    remaining,
+
+    isPast:
+      $("isPast").checked ||
+      remaining === 0
+  };
+}
+
+function validDrug(drug) {
+  if (!drug.name || !drug.strength) {
+    return "薬剤名と規格を入力してください。";
   }
 
   if (
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
+    !Number.isInteger(drug.remaining) ||
+    drug.remaining < 0
+
   ) {
-    return null;
+    return "残数は0以上の整数で入力してください。";
   }
 
-  return (
-    String(hours).padStart(2, "0") +
-    ":" +
-    String(minutes).padStart(2, "0")
-  );
-}
-
-function getSortableTime(time) {
-  return normalizeTypedTime(time) || "00:00";
-}
-
-function getSortedRecords() {
-  return [...records].sort((a, b) => {
-    const keyA =
-      `${a.date || ""} ${getSortableTime(a.time)}`;
-
-    const keyB =
-      `${b.date || ""} ${getSortableTime(b.time)}`;
-
-    return keyA.localeCompare(keyB);
-  });
-}
-
-/* =========================================
-   気分の表示
-========================================= */
-
-function formatMood(value) {
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return "—";
-
-  const formatted = Number(n.toPrecision(12));
-
-  return formatted > 0
-    ? `+${formatted}`
-    : String(formatted);
-}
-
-function moodColor(value, settings = moodSettings) {
-  const s = normalizeMoodSettings(settings);
-
-  const range = s.max - s.min;
-
-  if (range <= 0) {
-    return "#dce9e3";
-  }
-
-  const ratio = Math.max(
-    0,
-    Math.min(1, (value - s.min) / range)
-  );
-
-  // 低い気分：青
-  // 中間：薄い緑
-  // 高い気分：オレンジ
-  if (ratio < 0.35) {
-    return "#b8d6f4";
-  }
-
-  if (ratio < 0.65) {
-    return "#cce8d5";
-  }
-
-  return "#f7cfaa";
-}
-
-/* =========================================
-   共通処理
-========================================= */
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function createRecordId() {
   if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
+    drug.type === "prn" &&
+    drug.prnCount !== null &&
+    (
+      !Number.isInteger(drug.prnCount) ||
+      drug.prnCount < 0
+    )
   ) {
-    return crypto.randomUUID();
+    return "頓服の処方数を確認してください。";
   }
 
-  return (
-    Date.now().toString(36) +
-    Math.random().toString(36).slice(2)
+  if (
+    drug.type === "regular" &&
+    drug.prescriptionDays !== null &&
+    (
+      !Number.isInteger(drug.prescriptionDays) ||
+      drug.prescriptionDays < 1
+    )
+  ) {
+    return "処方日数を確認してください。";
+  }
+
+  return "";
+}
+
+function saveDrug(event) {
+  event.preventDefault();
+
+  const drug = readDrugForm();
+  const error = validDrug(drug);
+
+  if (error) {
+    alert(error);
+    return;
+  }
+
+  openPrescriptionDateDialog([drug], "manual");
+}
+
+function editDrug(id) {
+  const drug = data.drugs.find(
+    item => item.id === id
   );
+
+  if (!drug) return;
+
+  resetDrugForm();
+
+  $("drugId").value = drug.id;
+  $("drugName").value = drug.name || "";
+  $("strength").value = drug.strength || "";
+
+  $("drugType").value =
+    isPrn(drug) ? "prn" : "regular";
+
+  $("total").value = drug.total ?? "";
+
+  $("prescriptionDays").value =
+    drug.prescriptionDays ?? "";
+
+  $("prnCount").value =
+    drug.prnCount ?? "";
+
+  $("prnTiming").value =
+    drug.prnTiming ?? "";
+
+  setTimingFields(
+    normalizedTimings(drug)
+  );
+
+  $("isPast").checked = !!drug.isPast;
+
+  remainingManuallyEdited = true;
+
+  $("remaining").value =
+    Number(drug.remaining) || 0;
+
+  updateDrugTypeFields();
+  showPage("drugform");
 }
 
-/* =========================================
-   初期化
-========================================= */
+/* ========================================
+   お薬の完全削除
+======================================== */
 
+function deleteDrug(id) {
+  const drug = data.drugs.find(
+    item => String(item.id) === String(id)
+  );
 
-function initializeApp() {
-  loadNotices();
-  setCurrentDateTime();
+  if (!drug) return;
 
-  // 時系列・グラフの初期表示日を本日にする
-  const today = formatInputDate(new Date());
+  const message =
+    `「${drug.name}」を削除しますか？\n\n` +
+    "削除したお薬は、現在のお薬にも" +
+    "過去のお薬にも表示されません。";
 
-  timelineDateInput.value = today;
-  graphDateInput.value = today;
+  if (!confirm(message)) return;
 
-  renderMoodInput();
+  const previousDrugs = data.drugs;
 
-  renderRoutineActivities();
-  renderPlanList();
-  renderTimeline();
+  // データから完全に取り除く
+  data.drugs = data.drugs.filter(
+    item => String(item.id) !== String(id)
+  );
 
-  loadDailyMemo(timelineDateInput.value);
-
-  // グラフの初期表示
-  if (typeof Chart !== "undefined") {
-    drawGraph();
+  if (!saveData()) {
+    data.drugs = previousDrugs;
+    return;
   }
 
-  // 検索画面の初期表示
-  searchResultCount.textContent = "0件";
-
-  // Escキーでダイアログを閉じる
-  document.addEventListener("keydown", event => {
-    if (event.key !== "Escape") return;
-
-    closeRoutineModal();
-    closePrintDialog();
-    closeTransferDialog();
-  });
+  renderDrugs();
+  renderSlots();
 }
 
-/* =========================================
-   notices.json お知らせ表示
-========================================= */
+/* ========================================
+   現在のお薬・過去のお薬の切り替え
+======================================== */
 
-async function loadNotices() {
-  const panel = document.getElementById("noticesPanel");
-  const list = document.getElementById("noticesList");
+let drugListMode = "current";
 
-  if (!panel || !list) return;
+function switchDrugList(mode) {
+  drugListMode = mode === "past"
+    ? "past"
+    : "current";
 
-  try {
-    // キャッシュによる古いお知らせの表示を防ぐ
-    const response = await fetch(
-      "./notices.json?t=" + Date.now(),
-      { cache: "no-store" }
+  renderDrugs();
+}
+
+
+/* ========================================
+   過去のお薬にする・現役に戻す
+======================================== */
+
+function toggleDrugPast(id) {
+  const drug = data.drugs.find(
+    item => String(item.id) === String(id)
+  );
+
+  if (!drug) return;
+
+  const remaining = Number(drug.remaining) || 0;
+
+  const isPast =
+    !!drug.isPast ||
+    !!drug.manuallyPast ||
+    remaining <= 0;
+
+  const nextPast = !isPast;
+
+  // 残数0の薬は現役に戻せない
+  if (!nextPast && remaining <= 0) {
+    alert(
+      "残数が0のお薬は現役に戻せません。\n" +
+      "編集画面で残数を変更してください。"
+    );
+    return;
+  }
+
+  const message = nextPast
+    ? `「${drug.name}」を過去のお薬にしますか？\n残数は変更されません。`
+    : `「${drug.name}」を現役のお薬に戻しますか？`;
+
+  if (!confirm(message)) return;
+
+  const previousPast = drug.isPast;
+  const previousManual = drug.manuallyPast;
+
+  drug.isPast = nextPast;
+  drug.manuallyPast = nextPast;
+
+  if (!saveData()) {
+    drug.isPast = previousPast;
+    drug.manuallyPast = previousManual;
+    return;
+  }
+
+  renderDrugs();
+  renderSlots();
+}
+
+/* ========================================
+   お薬一覧の表示
+======================================== */
+
+function clearDrugSearch() {
+  $("drugSearchForm")?.reset();
+  renderDrugs();
+}
+
+function renderDrugs() {
+  const root = $("drugRows");
+
+  if (!root) return;
+
+  const showPast = drugListMode === "past";
+
+  const currentButton = $("currentDrugsButton");
+  const pastButton = $("pastDrugsButton");
+  const heading = $("drugListHeading");
+
+  // 現在のお薬ボタン
+  if (currentButton) {
+    currentButton.classList.toggle(
+      "selected",
+      !showPast
     );
 
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+    currentButton.setAttribute(
+      "aria-pressed",
+      String(!showPast)
+    );
+  }
+
+  // 過去のお薬ボタン
+  if (pastButton) {
+    pastButton.classList.toggle(
+      "selected",
+      showPast
+    );
+
+    pastButton.setAttribute(
+      "aria-pressed",
+      String(showPast)
+    );
+  }
+
+  // 見出し
+  if (heading) {
+    heading.textContent = showPast
+      ? "過去のお薬を確認する"
+      : "現在のお薬を確認する";
+  }
+
+  // 現在のお薬と過去のお薬を完全に分離
+  const drugs = data.drugs.filter(drug => {
+    const remaining = Number(drug.remaining) || 0;
+
+    const isPast =
+      !!drug.isPast ||
+      !!drug.manuallyPast ||
+      remaining <= 0;
+
+    if (showPast) {
+      
+      return isPast;
     }
 
-    const data = await response.json();
+    return !isPast;
+  });
 
-    const notices = Array.isArray(data.notices)
-      ? data.notices
-      : [];
+  // 処方日と薬剤名で絞り込み（現在／過去の区分は維持）
+  const start = $("drugSearchStart")?.value || "";
+  const end = $("drugSearchEnd")?.value || "";
+  const query = ($("drugSearchName")?.value || "").trim().toLocaleLowerCase("ja-JP");
+  const filteredDrugs = drugs.filter(drug => {
+    const prescribed = String(drug.prescribed || "").slice(0, 10);
+    const name = String(drug.name || "").toLocaleLowerCase("ja-JP");
+    return (!start || (prescribed && prescribed >= start)) &&
+      (!end || (prescribed && prescribed <= end)) &&
+      (!query || name.includes(query));
+  });
 
-    const now = Date.now();
+  const count = $("drugSearchCount");
+  if (count) count.textContent = `${filteredDrugs.length}件表示 / 全${drugs.length}件`;
 
-    const activeNotices = notices.filter(notice => {
-      if (!notice || !notice.message) return false;
+  // 表を初期化
+  root.replaceChildren();
 
-      const start = notice.start
-        ? Date.parse(notice.start)
-        : -Infinity;
+  // 対象のお薬がない場合
+  if (filteredDrugs.length === 0) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
 
-      const end = notice.end
-        ? Date.parse(notice.end)
-        : Infinity;
+    cell.colSpan = 11;
 
-      if (Number.isNaN(start) || Number.isNaN(end)) {
-        return false;
+    cell.textContent = drugs.length === 0
+      ? (showPast ? "過去のお薬はありません。" : "現在のお薬はありません。")
+      : "検索条件に一致するお薬はありません。";
+
+    row.appendChild(cell);
+    root.appendChild(row);
+
+    return;
+  }
+
+  // セル作成
+  function createCell(value) {
+    const cell = document.createElement("td");
+    cell.textContent = value ?? "";
+    return cell;
+  }
+
+  // お薬を1件ずつ表示
+  filteredDrugs.forEach(drug => {
+    const row = document.createElement("tr");
+
+    const remaining = Number(drug.remaining) || 0;
+
+    const isPast =
+      !!drug.isPast ||
+      !!drug.manuallyPast ||
+      remaining <= 0;
+
+    const prn = isPrn(drug);
+
+    // 薬剤名：日経メディカルへのリンク
+    const nameCell = document.createElement("td");
+    const nameLink = document.createElement("a");
+
+    nameLink.textContent = drug.name || "薬剤名なし";
+
+    const drugName = String(drug.name || "").trim();
+    const company = String(drug.company || "").trim();
+    const strength = String(drug.strength || "").trim();
+
+    const searchTerms = [
+      drugName,
+      strength,
+      company,
+      "site:medical.nikkeibp.co.jp"
+    ].filter(Boolean).join(" ");
+
+    nameLink.href =
+      "https://www.google.com/search?q=" +
+      encodeURIComponent(searchTerms);
+
+    nameLink.target = "_blank";
+    nameLink.rel = "noopener noreferrer";
+    nameLink.className = "drug-detail-link";
+
+    nameLink.title =
+      `${drug.name || "薬剤"}の情報を日経メディカルで調べる`;
+
+    nameCell.appendChild(nameLink);
+    row.appendChild(nameCell);
+
+    // 規格
+    row.appendChild(
+      createCell(drug.strength || "")
+    );
+
+    // 種類
+    const typeCell = createCell(
+      prn ? "頓服薬" : "定期薬"
+    );
+
+    if (isPast) {
+      const label = document.createElement("div");
+
+      label.textContent = "過去のお薬";
+      label.style.color = "#b83b3b";
+      label.style.fontWeight = "bold";
+      label.style.fontSize = "12px";
+
+      typeCell.appendChild(label);
+    }
+
+    row.appendChild(typeCell);
+
+    // 処方数量
+    row.appendChild(
+      createCell(prn ? "" : (drug.total ?? ""))
+    );
+
+    // 処方日数
+    row.appendChild(
+      createCell(
+        prn ? "" : (drug.prescriptionDays ?? "")
+      )
+    );
+
+    // 頓服の処方数
+    row.appendChild(
+      createCell(
+        prn ? (drug.prnCount ?? "") : ""
+      )
+    );
+
+    // 服薬タイミング
+    let timing = "";
+
+    if (prn) {
+      timing = drug.prnTiming || "";
+    } else {
+      timing = normalizedTimings(drug).join("・");
+    }
+
+    row.appendChild(createCell(timing));
+
+    // 処方日
+    row.appendChild(
+      createCell(drug.prescribed || "")
+    );
+
+    // 薬がなくなる日
+    row.appendChild(
+      createCell(prn ? "" : (drug.endDate || ""))
+    );
+
+    // 残数
+    const remainingCell = createCell(remaining);
+
+    if (remaining <= 3) {
+      remainingCell.classList.add("low-remaining");
+    }
+
+    row.appendChild(remainingCell);
+
+    // 操作ボタン
+    const actionsCell = document.createElement("td");
+
+    // 編集
+    const editButton = document.createElement("button");
+
+    editButton.type = "button";
+    editButton.textContent = "編集";
+    editButton.dataset.edit = String(drug.id);
+
+    editButton.onclick = () => {
+      editDrug(drug.id);
+    };
+
+    actionsCell.appendChild(editButton);
+
+    // 過去のお薬にする・現役に戻す
+    const pastActionButton =
+      document.createElement("button");
+
+    pastActionButton.type = "button";
+    pastActionButton.className = "drug-past-button";
+
+    pastActionButton.textContent = isPast
+      ? "現役に戻す"
+      : "過去のお薬にする";
+
+    pastActionButton.onclick = () => {
+      toggleDrugPast(drug.id);
+    };
+
+    actionsCell.appendChild(pastActionButton);
+
+    // 削除
+    const deleteButton = document.createElement("button");
+
+    deleteButton.type = "button";
+    deleteButton.textContent = "削除";
+    deleteButton.dataset.delete = String(drug.id);
+
+    deleteButton.onclick = () => {
+      deleteDrug(drug.id);
+    };
+
+    actionsCell.appendChild(deleteButton);
+
+    row.appendChild(actionsCell);
+    root.appendChild(row);
+  });
+}
+
+/* ========================================
+   OCR画像
+======================================== */
+
+function previewImage(input) {
+  const file = input.files?.[0];
+
+  selectedDrugImage = file || null;
+
+  if (!file) {
+    $("preview").hidden = true;
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    $("preview").src = reader.result;
+    $("preview").hidden = false;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+async function recognizeDrugImage() {
+  if (!selectedDrugImage) {
+    alert("画像を選択してください。");
+    return;
+  }
+
+  if (typeof Tesseract === "undefined") {
+    alert(
+      "OCRライブラリを読み込めませんでした。"
+    );
+    return;
+  }
+
+  $("ocrButton").disabled = true;
+
+  $("ocrStatus").textContent =
+    "日本語OCRを実行しています…";
+    
+  try {
+    if (!ocrWorker) {
+      ocrWorker =
+        await Tesseract.createWorker("jpn");
+    }
+
+    const result =
+      await ocrWorker.recognize(
+        selectedDrugImage
+      );
+
+    $("ocrText").value =
+  normalizeOCRText(result.data.text);
+
+    $("ocrResults").hidden = false;
+
+    updateOCRLines();
+
+    $("ocrStatus").textContent =
+      "読み取りが完了しました。内容を確認してください。";
+  } catch (error) {
+    console.error(error);
+
+    $("ocrStatus").textContent =
+      "読み取りに失敗しました。";
+  } finally {
+    $("ocrButton").disabled = false;
+  }
+}
+
+/* ========================================
+   OCRテキストの正規化・分割
+======================================== */
+
+function normalizeOCR(text) {
+  return String(text ?? "")
+    .normalize("NFKC")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/：/g, ":")
+    .trim();
+}
+
+function getOCRBlocks() {
+  const lines = $("ocrText")
+    .value
+    .split(/\r?\n/)
+    .map(normalizeOCR)
+    .filter(Boolean);
+
+  const blocks = [];
+  let current = null;
+
+  // 薬剤ブロックの開始判定
+  const strengthRE =
+    /\d[\d.\s]*(?:mg|μg|mcg|g)(?![a-z])/i;
+
+    const quantityRE =
+  /(?:内\s*服|屯\s*服|頓\s*服|忠\s*服)\s*[/／]\s*調\s*剤\s*数\s*量\s*:/;
+
+  for (const line of lines) {
+    const isStart =
+      strengthRE.test(line) &&
+      !quantityRE.test(line);
+
+    if (isStart) {
+      if (current) {
+        blocks.push(current.join("\n"));
       }
 
-      return now >= start && now < end;
-    });
+      current = [line];
+    } else if (current) {
+      current.push(line);
+    }
+  }
 
-    list.replaceChildren();
+  if (current) {
+    blocks.push(current.join("\n"));
+  }
 
-    activeNotices.forEach(notice => {
-      const article = document.createElement("article");
-      article.className = "notice-item";
+  // 半角スペースを削除
+  const normalizedBlocks = blocks.map(block =>
+    block.replace(/ /g, "").trim()
+  );
 
-      const title = document.createElement("h3");
-      title.textContent = notice.title || "お知らせ";
+  // 服薬タイミングの開始キーワード
+  const regularStartRE = /[起朝昼食夕寝]/;
 
-      const message = document.createElement("p");
-      message.textContent = notice.message;
+  // 頓服薬の服薬タイミングの終端文字
+  const prnEndRE = /時/;
 
-      article.append(title, message);
-      list.append(article);
-    });
+  return normalizedBlocks.filter(block => {
+    // 調剤数量の項目以降を抽出する
+    const quantityMatch = block.match(
+  /(?:内服|屯服|頓服|忠服)[/／]調剤数量:/
+);
 
-    panel.classList.toggle(
-      "hidden",
-      activeNotices.length === 0
+    if (!quantityMatch) {
+      return false;
+    }
+
+    const afterQuantity = block.slice(
+      quantityMatch.index +
+      quantityMatch[0].length
     );
+
+    // 定期薬は「日分」より後ろを判定
+    const daysMatch = afterQuantity.match(
+      /\d+日分/
+    );
+
+    if (daysMatch) {
+      const timingText = afterQuantity.slice(
+        daysMatch.index +
+        daysMatch[0].length
+      );
+
+      if (regularStartRE.test(timingText)) {
+        return true;
+      }
+    }
+
+    // 頓服薬は「処方分」「回分」「回」より後ろを判定
+    const prnMatch = afterQuantity.match(
+      /\d+(?:\.\d+)?(?:処方分|回分|回)/
+    );
+
+    if (prnMatch) {
+      const timingText = afterQuantity.slice(
+        prnMatch.index +
+        prnMatch[0].length
+      );
+
+      if (prnEndRE.test(timingText)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+}
+
+/* ========================================
+   OCR薬剤の選択処理
+======================================== */
+
+function getSelectedOCRIndexes() {
+  return [
+    ...$("ocrDrugList")
+      .querySelectorAll(
+        'input[type="checkbox"]:checked'
+      )
+  ].map(input => Number(input.value));
+}
+
+function updateSelectedOCRCount() {
+  $("selectedOCRCount").textContent =
+    `選択中：${getSelectedOCRIndexes().length}件`;
+}
+
+function updateOCRLines() {
+  cancelBatchRegistration();
+
+  const blocks = getOCRBlocks();
+
+  $("ocrDrugList").replaceChildren();
+
+  blocks.forEach((block, index) => {
+    const label =
+      document.createElement("label");
+
+    label.className = "ocr-drug-item";
+
+    const checkbox =
+      document.createElement("input");
+
+    checkbox.type = "checkbox";
+    checkbox.value = index;
+
+    checkbox.addEventListener(
+      "change",
+      updateSelectedOCRCount
+    );
+
+    const span =
+      document.createElement("span");
+
+    span.textContent =
+      block.split("\n")[0];
+
+    label.append(
+      checkbox,
+      span
+    );
+
+    $("ocrDrugList").append(label);
+  });
+
+  updateSelectedOCRCount();
+}
+
+function selectAllOCRDrugs() {
+  $("ocrDrugList")
+    .querySelectorAll(
+      'input[type="checkbox"]'
+    )
+    .forEach(input => {
+      input.checked = true;
+    });
+
+  updateSelectedOCRCount();
+}
+
+function clearOCRSelection() {
+  $("ocrDrugList")
+    .querySelectorAll(
+      'input[type="checkbox"]'
+    )
+    .forEach(input => {
+      input.checked = false;
+    });
+
+  updateSelectedOCRCount();
+}
+
+// OCRで読み取った服薬タイミングの誤認識を補正
+function normalizeOCRText(text) {
+  return String(text || "")
+    // 全角・半角スペース、タブを削除（改行は維持）
+    .replace(/[^\S\r\n]+/g, "")
+
+    // 「夕」を「タ」と誤認識した場合の補正
+    .replace(/タ食後/g, "夕食後")
+    .replace(/タ食前/g, "夕食前")
+    .replace(/タ食直前/g, "夕食直前")
+    .replace(/タ食直後/g, "夕食直後");
+}
+
+/* ========================================
+   定期薬の服薬タイミング解析
+======================================== */
+
+function parseMedicationTimings(text) {
+  // 文字列を正規化
+  const source = String(text ?? "")
+    .normalize("NFKC")
+    .replace(/\s+/g, "")
+    .replace(/就寝|寝る/g, "寝")
+    .replace(/起床/g, "起")
+    .replace(/毎食/g, "朝昼夕");
+
+  // 開始文字と有効な終端文字のペア
+  const validPairs = {
+    "起": ["後"],
+    "朝": ["前", "後"],
+    "昼": ["前", "後"],
+    "食": ["間"],
+    "夕": ["前", "後"],
+    "寝": ["前"]
+  };
+
+  const results = [];
+  let pending = [];
+
+  // 文字列を先頭から順番に探索
+  for (let i = 0; i < source.length; i++) {
+    // 「夜間」は服薬タイミングとして扱わない
+    if (source.startsWith("夜間", i)) {
+      pending = [];
+      i++;
+      continue;
+    }
+
+    const char = source[i];
+
+    // 開始文字が見つかった場合
+    if (
+      Object.prototype.hasOwnProperty.call(
+        validPairs,
+        char
+      )
+    ) {
+      // 重複を避けて候補に追加
+      if (!pending.includes(char)) {
+        pending.push(char);
+      }
+    }
+
+    // 終端文字が見つかった場合
+    else if ("前後間".includes(char)) {
+      // 保持している開始文字をすべて判定
+      for (const start of pending) {
+        if (validPairs[start].includes(char)) {
+          const timing = start + char;
+
+          // 同じタイミングは重複登録しない
+          if (!results.includes(timing)) {
+            results.push(timing);
+          }
+        }
+      }
+
+      // この探索を終了
+      // 次の開始文字があれば再探索
+      pending = [];
+    }
+  }
+
+  return results;
+}
+
+
+/* ========================================
+   OCR薬剤情報の抽出
+======================================== */
+
+function extractPrescriptionDetails(block) {
+  const text = normalizeOCR(block)
+    .replace(/ /g, "");
+
+  const lines = text.split("\n");
+
+  const result = {
+    name: "",
+    strength: "",
+    total: "",
+    days: null,
+    prnCount: null,
+    timings: [],
+    prnTiming: "",
+    type: "regular",
+    warnings: []
+  };
+
+  const first = lines[0] || "";
+
+  const strengthMatch = first.match(
+    /(\d+(?:\.\d+)?(?:mg|μg|mcg|g))/i
+  );
+
+  if (strengthMatch) {
+    result.name = first
+      .slice(0, strengthMatch.index)
+      .trim();
+
+    result.strength = strengthMatch[1];
+  } else {
+    result.name = first;
+
+    result.warnings.push(
+      "規格を判定できませんでした。"
+    );
+  }
+
+  const quantityMatch = text.match(
+  /(?:内服|屯服|頓服|忠服)[/／]調剤数量:/
+);
+
+  if (!quantityMatch) {
+    result.warnings.push(
+      "調剤数量の項目が見つかりません。"
+    );
+
+    return result;
+  }
+
+  const rest = text.slice(
+    quantityMatch.index +
+    quantityMatch[0].length
+  );
+
+  const prnMatch = rest.match(
+    /(\d+(?:\.\d+)?)\s*(?:処方分|回分|回)/
+  );
+
+  const dayMatch = rest.match(
+    /(\d+)日分/
+  );
+
+  const explicitPrn =
+  /(?:屯服|頓服|忠服)[/／]調剤数量:/
+    .test(quantityMatch[0]);
+
+  const likelyPrn =
+    explicitPrn ||
+    (
+      !!prnMatch &&
+      (
+        !dayMatch ||
+        prnMatch.index < dayMatch.index
+      )
+    );
+
+  if (likelyPrn) {
+    result.type = "prn";
+
+    if (prnMatch) {
+      result.prnCount =
+        Number(prnMatch[1]);
+
+      const after = rest.slice(
+        prnMatch.index +
+        prnMatch[0].length
+      ).trimStart();
+
+      const timeIndex =
+        after.indexOf("時");
+
+      result.prnTiming =
+        timeIndex >= 0
+          ? after
+              .slice(0, timeIndex + 1)
+              .replace(/\n/g, "")
+              .trim()
+          : "";
+
+      if (!result.prnTiming) {
+        result.warnings.push(
+          "頓服の服薬タイミングを判定できませんでした。"
+        );
+      }
+    } else {
+      result.warnings.push(
+        "頓服の処方数が見つかりません。"
+      );
+    }
+
+    return result;
+  }
+
+  if (dayMatch) {
+    result.days =
+      Number(dayMatch[1]);
+
+    const beforeDays = rest.slice(
+      0,
+      dayMatch.index
+    );
+
+    const quantity = beforeDays.match(
+      /^(\d+(?:\.\d+)?)/
+    );
+
+    result.total =
+      quantity ? quantity[1] : "";
+
+    
+/* ========================================
+   服薬タイミングの抽出
+======================================== */
+
+// 「〇日分」より後ろを優先して探索
+const timingText = rest.slice(
+  dayMatch.index + dayMatch[0].length
+);
+
+result.timings = parseMedicationTimings(timingText);
+
+// 見つからない場合は調剤数量以降を再探索
+if (result.timings.length === 0) {
+  result.timings = parseMedicationTimings(rest);
+}
+
+  } else {
+    result.warnings.push(
+      "処方日数が見つかりません。"
+    );
+  }
+
+  if (!result.timings.length) {
+    result.type = "prn";
+    result.total = "";
+    result.days = null;
+
+    if (prnMatch) {
+      result.prnCount =
+        Number(prnMatch[1]);
+
+      const after = rest.slice(
+        prnMatch.index +
+        prnMatch[0].length
+      );
+
+      const pos =
+        after.indexOf("時");
+
+      result.prnTiming =
+        pos < 0
+          ? ""
+          : after
+              .slice(0, pos + 1)
+              .replace(/\n/g, "")
+              .trim();
+    }
+
+    result.warnings.push(
+      "定期薬の服薬タイミングがないため、頓服薬として判定しました。確認してください。"
+    );
+  }
+
+  return result;
+}
+
+/* ========================================
+   OCRから1件反映
+======================================== */
+
+function applyOCRToDrugForm() {
+  const indexes =
+    getSelectedOCRIndexes();
+
+  if (indexes.length !== 1) {
+    alert(
+      "反映する薬剤を1件だけ選択してください。"
+      
+    );
+    return;
+  }
+
+  const result =
+    extractPrescriptionDetails(
+      getOCRBlocks()[indexes[0]]
+    );
+
+  if (result.warnings.length) {
+    const proceed = confirm(
+      "読み取りに確認事項があります。\n\n" +
+      result.warnings.join("\n") +
+      "\n\n入力欄へ反映しますか？"
+    );
+
+    if (!proceed) return;
+  }
+
+  $("drugId").value = "";
+  $("drugName").value = result.name;
+  $("strength").value = result.strength;
+  $("drugType").value = result.type;
+  $("total").value = result.total;
+  $("prescriptionDays").value = result.days ?? "";
+  $("prnCount").value = result.prnCount ?? "";
+  $("prnTiming").value = result.prnTiming;
+  setTimingFields(result.timings);
+
+  remainingManuallyEdited = false;
+  updateDrugTypeFields();
+  calculateInitialRemaining(true);
+
+  $("drugForm").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+/* ========================================
+   OCR複数薬剤の一括登録
+======================================== */
+
+function prepareBatchRegistration() {
+  const indexes = getSelectedOCRIndexes();
+
+  if (!indexes.length) {
+    alert("登録する薬剤を選択してください。");
+    return;
+  }
+
+  const blocks = getOCRBlocks();
+  const drugs = [];
+  const warnings = [];
+  const errors = [];
+
+  for (const index of indexes) {
+    const parsed =
+      extractPrescriptionDetails(blocks[index]);
+
+    const drug = {
+      name: parsed.name,
+      strength: parsed.strength,
+      type: parsed.type,
+      total: parsed.total,
+      prescriptionDays: parsed.days,
+      prnCount: parsed.prnCount,
+      timings: parsed.timings,
+      prnTiming: parsed.prnTiming,
+      prescribed: "",
+      endDate: "",
+      remaining:
+        parsed.type === "prn"
+          ? (parsed.prnCount || 0)
+          : (parsed.days || 0) * parsed.timings.length,
+      isPast: false
+    };
+
+    if (parsed.warnings.length) {
+      warnings.push(
+        `${drug.name}：${parsed.warnings.join("、")}`
+      );
+    }
+
+    if (!drug.name || !drug.strength) {
+      errors.push(
+        `${drug.name || "薬剤名不明"}：薬剤名または規格が不明`
+      );
+      continue;
+    }
+
+    if (
+      drug.type === "regular" &&
+      (
+        !Number.isInteger(drug.prescriptionDays) ||
+        drug.prescriptionDays <= 0 ||
+        !drug.timings.length
+      )
+    ) {
+      errors.push(
+        `${drug.name}：処方日数または服薬タイミングが不明`
+      );
+      continue;
+    }
+
+    if (
+      drug.type === "prn" &&
+      (
+        !Number.isInteger(drug.prnCount) ||
+        drug.prnCount <= 0 ||
+        !drug.prnTiming
+      )
+    ) {
+      errors.push(
+        `${drug.name}：頓服の処方数または服薬タイミングが不明`
+      );
+      continue;
+    }
+
+    drugs.push(drug);
+  }
+
+  if (errors.length) {
+    alert(
+      "読み取り結果を確認してください。" +
+      "登録できない薬があります：\n" +
+      errors.join("\n")
+    );
+    return;
+  }
+
+  if (!drugs.length) {
+    alert("登録する薬剤がありません。");
+    return;
+  }
+
+  if (warnings.length) {
+    const proceed = confirm(
+      "以下の確認事項があります。\n\n" +
+      warnings.join("\n") +
+      "\n\nこの内容で登録を進めますか？"
+    );
+
+    if (!proceed) return;
+  }
+
+  batchDraft = drugs;
+  openPrescriptionDateDialog(drugs, "batch");
+}
+
+/* ========================================
+   OCR登録キャンセル
+======================================== */
+
+function cancelBatchRegistration() {
+  batchDraft = [];
+}
+
+/* ========================================
+   処方日入力ダイアログ
+======================================== */
+
+function openPrescriptionDateDialog(
+  drugs,
+  source = "manual"
+) {
+  const title = $("modalTitle");
+  const body = $("modalBody");
+
+  title.textContent = "処方日を入力";
+
+  body.replaceChildren();
+
+  const description =
+    document.createElement("p");
+
+  description.textContent =
+    `${drugs.length}件のお薬を登録します。`;
+
+  body.appendChild(description);
+
+  const label = document.createElement("label");
+  label.textContent = "処方日";
+
+  const input = document.createElement("input");
+  input.type = "date";
+  input.value = today();
+  input.required = true;
+
+  label.appendChild(input);
+  body.appendChild(label);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "orange";
+  button.textContent = "登録する";
+
+  button.onclick = () => {
+    if (!input.value) {
+      alert("処方日を入力してください。");
+      return;
+    }
+
+    const prescribed = input.value;
+
+    const prepared = drugs.map(drug => {
+      const copy = {
+        ...drug,
+        prescribed
+      };
+
+      copy.endDate =
+        copy.type === "prn"
+          ? ""
+          : getEndDate(
+              prescribed,
+              copy.prescriptionDays
+            );
+
+      return copy;
+    });
+
+    commitDrugRegistration(prepared, source);
+  };
+
+  body.appendChild(button);
+
+  $("modal").classList.remove("hidden");
+}
+
+/* ========================================
+   薬剤登録の確定
+======================================== */
+
+function commitDrugRegistration(
+  drugs,
+  source = "manual"
+) {
+  const editId =
+    source === "manual"
+      ? $("drugId").value
+      : "";
+
+  for (const drug of drugs) {
+    if (editId) {
+      const index = data.drugs.findIndex(
+        item => String(item.id) === String(editId)
+      );
+
+      if (index >= 0) {
+        data.drugs[index] = {
+          ...data.drugs[index],
+          ...drug,
+          id: editId
+        };
+      }
+    } else {
+      data.drugs.push({
+        ...drug,
+        id: createId()
+      });
+    }
+  }
+
+  if (!saveData()) return;
+
+  closeModal();
+  cancelBatchRegistration();
+  renderSlots();
+  renderDrugs();
+  showPage("drugs");
+}
+
+/* ========================================
+   OCRテキスト編集時の更新
+======================================== */
+
+function setupOCRTextListener() {
+  const input = $("ocrText");
+
+  if (!input) return;
+
+  input.addEventListener("input", () => {
+    updateOCRLines();
+  });
+}
+
+/* ========================================
+   服薬記録用の補助関数
+======================================== */
+
+function findDrugById(id) {
+  return data.drugs.find(
+    drug => String(drug.id) === String(id)
+  );
+}
+
+function findDrugByName(name) {
+  return data.drugs.find(
+    drug => drug.name === name
+  );
+}
+
+/* ========================================
+   服薬セット
+======================================== */
+
+function getRegularDrugs() {
+  return data.drugs.filter(drug => {
+    const remaining = Number(drug.remaining) || 0;
+
+    return (
+      !isPrn(drug) &&
+      !drug.isPast &&
+      !drug.manuallyPast &&
+      remaining > 0
+    );
+  });
+}
+
+function getPrnDrugs() {
+  return data.drugs.filter(drug => {
+    const remaining = Number(drug.remaining) || 0;
+
+    return (
+      isPrn(drug) &&
+      !drug.isPast &&
+      !drug.manuallyPast &&
+      remaining > 0
+    );
+  });
+}
+
+function getMedicationSlots() {
+  const groups = new Map();
+
+  for (const drug of getRegularDrugs()) {
+    for (const timing of normalizedTimings(drug)) {
+      if (!groups.has(timing)) {
+        groups.set(timing, []);
+      }
+
+      groups.get(timing).push(drug);
+    }
+  }
+
+  return [...groups.entries()].map(
+    ([timing, drugs]) => ({
+      timing,
+      drugs
+    })
+  );
+}
+
+/* ========================================
+   服薬セットの表示
+======================================== */
+
+function renderSlots() {
+  const root = $("slots");
+
+  if (!root) return;
+
+  root.replaceChildren();
+
+  const slots = getMedicationSlots();
+
+  if (!slots.length) {
+    root.textContent =
+      "現在登録されている定期薬はありません。";
+    return;
+  }
+
+  for (const slot of slots) {
+    const card = document.createElement("div");
+    card.className = "slot-card";
+
+    const heading = document.createElement("h3");
+    heading.textContent = slot.timing;
+
+    card.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = "slot-drugs";
+
+    for (const drug of slot.drugs) {
+      const item = document.createElement("div");
+      item.className = "slot-drug";
+
+      const name = document.createElement("span");
+      name.textContent =
+        `${drug.name} ${drug.strength}`;
+
+      item.appendChild(name);
+
+      list.appendChild(item);
+    }
+
+    card.appendChild(list);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "greenbtn";
+    button.textContent = "服薬を記録する";
+
+    button.onclick = () => {
+      recordMedicationSlot(slot.timing);
+    };
+
+    card.appendChild(button);
+    root.appendChild(card);
+  }
+}
+
+/* ========================================
+
+      "登録できない薬があります：\n" +
+      errors.join("\n")
+    );
+    return;
+  }
+
+  if (!drugs.length) {
+    alert("登録する薬剤がありません。");
+    return;
+  }
+
+  // 選択したすべてのお薬に
+  // 同じ処方日を入力する画面を開く
+  openPrescriptionDateDialog(
+    drugs,
+    "ocr"
+  );
+}
+
+/* ========================================
+   OCR一括登録の保存処理
+======================================== */
+
+function saveBatchRegistration() {
+  const items = [];
+
+  const cards =
+    $("batchReviewItems")
+      .querySelectorAll(
+        ".batch-review-item"
+      );
+
+  for (const card of cards) {
+    const field = key =>
+      card.querySelector(
+        `[data-field="${key}"]`
+      ).value.trim();
+
+    const type = field("type");
+
+    const days =
+      type === "regular" &&
+      field("days") !== ""
+        ? Number(field("days"))
+        : null;
+
+    const prnCount =
+      type === "prn" &&
+      field("prnCount") !== ""
+        ? Number(field("prnCount"))
+        : null;
+
+    const timings =
+      type === "regular"
+        ? readTimingFields(
+            card.querySelector(
+              ".review-timings"
+            )
+          )
+        : [];
+
+    const remaining =
+      field("remaining") === ""
+        ? (
+            type === "prn"
+              ? prnCount || 0
+              : (days || 0) *
+                timings.length
+          )
+        : Number(
+            field("remaining")
+          );
+
+    const drug = {
+      id: createId(),
+      name: field("name"),
+      strength: field("strength"),
+      type,
+
+      total:
+        type === "regular"
+          ? field("total")
+          : "",
+
+      prescriptionDays: days,
+      prnCount,
+      timings,
+
+      prnTiming:
+        type === "prn"
+          ? field("prnTiming")
+          : "",
+
+      prescribed:
+        field("prescribed"),
+
+      endDate:
+        type === "regular"
+          ? getEndDate(
+              field("prescribed"),
+              days
+            )
+          : "",
+
+      remaining,
+      isPast: remaining === 0
+    };
+
+    const error =
+      validDrug(drug);
+
+    if (error) {
+      alert(
+        `${drug.name || "薬剤"}：${error}`
+      );
+      return;
+    }
+
+    items.push(drug);
+  }
+
+  data.drugs.push(...items);
+
+  if (saveData()) {
+    resetDrugForm();
+    showPage("drugs");
+  }
+}
+
+/* ========================================
+   共通：処方日入力 → 登録内容確認 → 保存
+======================================== */
+
+let pendingDrugRegistration = null;
+
+function openPrescriptionDateDialog(drugs, mode) {
+  pendingDrugRegistration = {
+    drugs: drugs.map(drug => ({ ...drug })),
+    mode,
+    editingId: mode === "manual" ? $("drugId").value : ""
+  };
+
+  $("modalTitle").textContent = "処方日を入力";
+
+  const body = $("modalBody");
+  body.replaceChildren();
+
+  const label = document.createElement("label");
+  label.textContent = "処方日（必須・手動入力）";
+
+  const input = document.createElement("input");
+  input.type = "date";
+  input.id = "registrationPrescriptionDate";
+  input.required = true;
+
+  input.value =
+    mode === "manual" && pendingDrugRegistration.editingId
+      ? (
+          data.drugs.find(
+            d => d.id === pendingDrugRegistration.editingId
+          )?.prescribed || ""
+        )
+      : "";
+
+  label.append(input);
+  body.append(label);
+
+  const note = document.createElement("p");
+  note.className = "hint";
+
+  note.textContent = mode === "ocr"
+    ? `選択した${drugs.length}件すべてに同じ処方日を適用します。`
+    : "処方日は本日とは限りません。実際の処方日を入力してください。";
+
+  body.append(note);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "orange";
+  button.textContent = "登録内容を確認する";
+  button.onclick = showDrugRegistrationReview;
+
+  body.append(button);
+
+  $("modal").classList.remove("hidden");
+}
+
+/* ========================================
+   登録内容の確認画面
+======================================== */
+
+function showDrugRegistrationReview() {
+  if (!pendingDrugRegistration) return;
+
+  const date =
+    $("registrationPrescriptionDate")?.value || "";
+
+  if (!date) {
+    alert("処方日を入力してください。");
+    $("registrationPrescriptionDate")?.focus();
+    return;
+  }
+
+  // 処方日確定後に重複チェック
+const checked = partitionRegistrationDuplicates(
+  pendingDrugRegistration.drugs,
+  date,
+  pendingDrugRegistration.editingId
+);
+
+if (checked.duplicates.length > 0) {
+  const names = checked.duplicates
+    .map(drug => `${drug.name} ${drug.strength}`)
+    .join("\n");
+
+  alert(
+    "すでに登録されているお薬があります。\n\n" +
+    names +
+    "\n\n重複するお薬は登録しません。"
+  );
+
+  if (checked.unique.length === 0) {
+    return;
+  }
+
+  pendingDrugRegistration.drugs = checked.unique;
+}
+
+  pendingDrugRegistration.prescribed = date;
+
+  const body = $("modalBody");
+  body.replaceChildren();
+
+  $("modalTitle").textContent = "登録内容の確認";
+
+  const heading = document.createElement("p");
+
+  heading.textContent =
+    `処方日：${date}（${pendingDrugRegistration.drugs.length}件共通）`;
+
+  body.append(heading);
+
+  pendingDrugRegistration.drugs.forEach((drug, index) => {
+    const item = document.createElement("div");
+    item.className = "batch-review-item";
+
+    const endDate =
+      drug.type === "regular"
+        ? getEndDate(date, drug.prescriptionDays)
+        : "";
+
+    const rows = [
+      `${index + 1}. ${drug.name} ${drug.strength}`,
+      `種類：${drug.type === "prn" ? "頓服薬" : "定期薬"}`,
+      `処方数量：${drug.total || "―"}`,
+      `処方日数：${drug.prescriptionDays ?? "―"}`,
+      `頓服の処方数：${drug.prnCount ?? "―"}`,
+      `服薬タイミング：${
+        drug.type === "prn"
+          ? (drug.prnTiming || "―")
+          : (drug.timings.join("、") || "―")
+      }`,
+      `処方日：${date}`,
+      `薬がなくなる日：${endDate || "―"}`,
+      `残数：${drug.remaining}`
+    ];
+
+    rows.forEach((line, i) => {
+      const p = document.createElement(
+        i === 0 ? "h4" : "p"
+      );
+
+      p.textContent = line;
+      p.style.margin = "3px 0";
+      
+      item.append(p);
+    });
+
+    body.append(item);
+  });
+
+  const back = document.createElement("button");
+  back.type = "button";
+  back.textContent = "処方日を修正する";
+
+  back.onclick = () => {
+    const saved = pendingDrugRegistration;
+
+    openPrescriptionDateDialog(
+      saved.drugs,
+      saved.mode
+    );
+
+    $("registrationPrescriptionDate").value =
+      saved.prescribed;
+  };
+
+  body.append(back);
+
+  const confirmButton =
+    document.createElement("button");
+
+  confirmButton.type = "button";
+  confirmButton.className = "orange";
+  confirmButton.textContent = "登録を確定する";
+  confirmButton.onclick = confirmDrugRegistration;
+
+  body.append(confirmButton);
+}
+
+/* ========================================
+   登録の確定・データ保存
+======================================== */
+
+function confirmDrugRegistration() {
+  if (!pendingDrugRegistration?.prescribed) return;
+
+  const {
+    drugs,
+    prescribed,
+    mode,
+    editingId
+  } = pendingDrugRegistration;
+
+  const updated = drugs.map(drug => ({
+    ...drug,
+    prescribed,
+    endDate:
+      drug.type === "regular"
+        ? getEndDate(
+            prescribed,
+            drug.prescriptionDays
+          )
+        : ""
+  }));
+
+  for (const drug of updated) {
+    const error = validDrug(drug);
+
+    if (error) {
+      alert(error);
+      return;
+    }
+  }
+
+  // 保存対象の重複チェックを統一
+const checked = partitionRegistrationDuplicates(
+  updated,
+  prescribed,
+  editingId
+);
+
+const toSave = checked.unique;
+const skipped = checked.duplicates.map(
+  drug => drug.name
+);
+
+// すべて重複している場合は保存しない
+if (toSave.length === 0) {
+  alert(
+    "すべて登録済みのお薬と重複しています。\n" +
+    "新しいお薬は登録されません。"
+  );
+  return;
+}
+
+// 一部だけ重複している場合
+if (skipped.length > 0) {
+  alert(
+    "以下のお薬は登録済みのため除外します。\n\n" +
+    skipped.join("\n")
+  );
+}
+
+  const oldDrugs = data.drugs.slice();
+
+  if (editingId) {
+    const index = data.drugs.findIndex(
+      drug => drug.id === editingId
+    );
+
+    if (index < 0) {
+      alert("編集対象の薬剤が見つかりません。");
+      return;
+    }
+
+    data.drugs[index] = {
+      ...data.drugs[index],
+      ...toSave[0]
+    };
+
+    delete data.drugs[index].timing;
+  } else {
+    data.drugs.push(
+      ...toSave.map(drug => ({
+        id: createId(),
+        ...drug
+      }))
+    );
+  }
+
+  if (!saveData()) {
+    data.drugs = oldDrugs;
+    return;
+  }
+
+  pendingDrugRegistration = null;
+
+  closeModal();
+  resetDrugForm();
+  showPage("drugs");
+
+  if (skipped.length) {
+    alert(
+      `重複のため${skipped.length}件を除外しました。`
+    );
+  }
+}
+
+/* ========================================
+   現在服薬中のお薬
+======================================== */
+
+function activeDrugs() {
+  return data.drugs.filter(drug =>
+    !drug.isPast &&
+    !drug.manuallyPast &&
+    Number(drug.remaining) > 0
+  );
+}
+
+/* ========================================
+   ホーム画面の服薬ボタン
+======================================== */
+
+function renderSlots() {
+  const slots = $("slots");
+
+  slots.replaceChildren();
+
+  const drugs = activeDrugs();
+
+  
+  // 服薬タイミングの表示順
+  const timingOrder = [
+    "起床時",
+    "朝前",
+    "朝後",
+    "昼前",
+    "昼後",
+    "夕前",
+    "夕後",
+    "寝る前"
+  ];
+
+  const regular = unique(
+    drugs
+      .filter(drug => !isPrn(drug))
+      .flatMap(normalizedTimings)
+  ).sort((a, b) => {
+    const indexA = timingOrder.indexOf(a);
+    const indexB = timingOrder.indexOf(b);
+
+    const orderA = indexA === -1 ? timingOrder.length : indexA;
+    const orderB = indexB === -1 ? timingOrder.length : indexB;
+
+    return orderA - orderB;
+  });
+
+
+  const prn = unique(
+    drugs
+      .filter(isPrn)
+      .map(drug =>
+        drug.prnTiming || "未設定"
+      )
+  );
+
+  for (const timing of regular) {
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+    button.textContent = timing;
+
+    button.onclick = () =>
+      openMedicationSlot(
+        timing,
+        "regular"
+      );
+
+    slots.append(button);
+  }
+
+  for (const timing of prn) {
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+    button.className = "prn-slot";
+    button.textContent = timing;
+
+    button.onclick = () =>
+      openMedicationSlot(
+        timing,
+        "prn"
+      );
+
+    slots.append(button);
+  }
+}
+
+/* ========================================
+   服薬確認画面
+======================================== */
+
+function openMedicationSlot(
+  timing,
+  type = "regular"
+) {
+  const drugs = activeDrugs().filter(
+    drug => {
+      if (type === "prn") {
+        return (
+          isPrn(drug) &&
+          (
+            drug.prnTiming ||
+            "未設定"
+          ) === timing
+        );
+      }
+
+      return (
+        !isPrn(drug) &&
+        normalizedTimings(drug)
+          .includes(timing)
+      );
+    }
+  );
+
+  if (!drugs.length) {
+    renderSlots();
+    return;
+  }
+
+  $("modalTitle").textContent =
+    `${timing} の服薬記録`;
+    
+  const body = $("modalBody");
+  body.replaceChildren();
+
+  const intro =
+    document.createElement("p");
+
+  intro.textContent =
+    "服薬した薬を選び、確定してください。確定した薬の残数が1減ります。";
+
+  body.append(intro);
+
+  for (const drug of drugs) {
+    const label =
+      document.createElement("label");
+
+    label.className =
+      "medicationItem";
+
+    const input =
+      document.createElement("input");
+
+    input.type = "checkbox";
+    input.value = drug.id;
+    input.checked = true;
+
+    const span =
+      document.createElement("span");
+
+    span.textContent =
+      `${drug.name} ${drug.strength || ""}` +
+      `（残数 ${drug.remaining}）`;
+
+    label.append(input, span);
+    body.append(label);
+  }
+
+  const button =
+    document.createElement("button");
+
+  button.type = "button";
+  button.className = "orange";
+  button.textContent =
+    "服薬を確定する";
+
+  button.onclick = () => {
+    const ids = [
+      ...body.querySelectorAll(
+        'input[type="checkbox"]:checked'
+      )
+    ].map(input => input.value);
+
+    if (!ids.length) {
+      alert(
+        "薬剤を選択してください。"
+      );
+      return;
+    }
+
+    recordMedication(
+      timing,
+      ids
+    );
+
+    closeModal();
+  };
+
+  body.append(button);
+
+  $("modal")
+    .classList.remove("hidden");
+}
+
+/* ========================================
+   服薬確定・残数減算
+======================================== */
+
+function recordMedication(timing, ids) {
+  const stamp =
+    new Date().toISOString();
+
+  let count = 0;
+  const awardId = createId();
+  const historyIds = [];
+
+  for (const id of ids) {
+    const drug =
+      data.drugs.find(
+        item => item.id === id
+      );
+
+    if (
+      !drug ||
+      drug.isPast ||
+      drug.manuallyPast ||
+      Number(drug.remaining) <= 0
+    ) {
+      continue;
+    }
+
+    drug.remaining =
+      Number(drug.remaining) - 1;
+
+    if (drug.remaining === 0) {
+      drug.isPast = true;
+    }
+
+    const historyId = createId();
+
+    data.history.push({
+      id: historyId,
+      tokenAwardId: awardId,
+      drugId: drug.id,
+      drugName: drug.name,
+      strength: drug.strength,
+      timing,
+      timestamp: stamp,
+      canceled: false,
+      remainingAdjusted: true
+    });
+
+    historyIds.push(historyId);
+    count++;
+  }
+
+  if (count) {
+    grantTokenForMedication(
+      awardId,
+      historyIds
+    );
+  }
+
+  if (count && saveData()) {
+    renderTokenUI();
+    renderSlots();
+    renderDrugs();
+    renderHistory();
+  }
+}
+
+/* ========================================
+   服薬履歴
+======================================== */
+
+function clearHistorySearch() {
+  $("historySearchForm").reset();
+  renderHistory();
+}
+
+function renderHistory() {
+  const root = $("historyList");
+  root.replaceChildren();
+
+  const start = $("historyStart")?.value || "";
+  const end = $("historyEnd")?.value || "";
+  const drugQuery = ($("historyDrugName")?.value || "").trim().toLocaleLowerCase("ja-JP");
+
+  
+const history = [...data.history]
+  .filter(item => !item.canceled)
+    .filter(item => {
+      const dateValue = item.timestamp || item.date || "";
+      const parsedDate = new Date(dateValue);
+      // ISO文字列の日付部分はUTCのため、服薬日時は端末の現地日付で判定する。
+      const localDate = Number.isNaN(parsedDate.getTime())
+        ? String(dateValue).slice(0, 10)
+        : [parsedDate.getFullYear(), String(parsedDate.getMonth() + 1).padStart(2, "0"), String(parsedDate.getDate()).padStart(2, "0")].join("-");
+      const name = String(item.drugName || item.name || "薬剤").toLocaleLowerCase("ja-JP");
+      return (!start || localDate >= start) &&
+        (!end || localDate <= end) &&
+        (!drugQuery || name.includes(drugQuery));
+    })
+    .sort((a, b) => new Date(b.timestamp || b.date || 0) - new Date(a.timestamp || a.date || 0));
+
+    
+const count = $("historySearchCount");
+
+const activeHistoryCount = data.history.filter(
+  item => !item.canceled
+).length;
+
+if (count) {
+  count.textContent =
+    `${history.length}件表示 / 全${activeHistoryCount}件`;
+}
+
+  if (!history.length) {
+root.textContent = activeHistoryCount
+  ? "検索条件に一致する服薬記録はありません。"
+  : "服薬記録はありません。";
+
+    return;
+  }
+
+  
+  for (const item of history) {
+    const card = document.createElement("div");
+    card.className = "history-record-card";
+
+    // 1行目：服薬日時
+    const date = document.createElement("div");
+    date.className = "history-record-date";
+    date.textContent = formatDateTime(item.timestamp || item.date);
+
+    // 2行目：薬剤名と取り消しボタン
+    const row = document.createElement("div");
+    row.className = "history-record-row";
+
+    const name = document.createElement("div");
+    name.className = "history-record-name";
+    name.textContent =
+      `${item.drugName || item.name || "薬剤"}` +
+      `${item.timing ? "（" + item.timing + "）" : ""}`;
+
+    row.append(name);
+
+    if (!item.canceled) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "history-record-cancel";
+      button.textContent = "取り消し";
+      button.onclick = () => cancelMedication(item.id);
+      row.append(button);
+    }
+
+    card.append(date, row);
+    root.append(card);
+  }
+}
+
+/* ========================================
+   服薬取消・残数復元
+======================================== */
+
+function cancelMedication(id) {
+  const item = data.history.find(
+    history => history.id === id
+  );
+
+  if (
+    !item ||
+    item.canceled
+  ) {
+    return;
+  }
+
+  if (
+    !confirm(
+      "この服薬記録を取り消しますか？"
+    )
+  ) {
+    return;
+  }
+
+  item.canceled = true;
+
+  if (item.tokenAwardId) {
+    revokeTokenForCanceledMedication(
+      item.tokenAwardId
+    );
+  }
+
+  const drug = data.drugs.find(
+    drug => drug.id === item.drugId
+  );
+
+  if (
+    drug &&
+    item.remainingAdjusted
+  ) {
+    drug.remaining =
+      Number(drug.remaining || 0) + 1;
+
+    drug.isPast = false;
+  }
+
+  if (saveData()) {
+    renderHistory();
+    renderSlots();
+    renderDrugs();
+    
+  }
+}
+
+/* ========================================
+   設定
+======================================== */
+
+function renderSettings() {
+  const root = $("settingList");
+  root.replaceChildren();
+
+  const note = document.createElement("div");
+
+  note.textContent =
+    "服薬ボタンは登録した定期薬・頓服薬の服薬タイミングから自動生成されます。変更する場合は「お薬の管理」から薬剤を編集してください。";
+
+  root.append(note);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "お薬の管理へ";
+
+  button.onclick = () => showPage("drugs");
+
+  root.append(button);
+}
+
+/* ========================================
+   メモ追加（背景色対応）
+======================================== */
+
+function addMemo(textareaId) {
+  const area = $(textareaId);
+  const content = area.value.trim();
+
+  if (!content) {
+    alert("メモを入力してください。");
+    return;
+  }
+
+  const colorSelectId =
+    textareaId === "quickMemo"
+      ? "quickMemoColor"
+      : "listMemoColor";
+
+  const colorSelect = $(colorSelectId);
+
+  const selectedColor =
+    colorSelect && MEMO_COLORS[colorSelect.value]
+      ? colorSelect.value
+      : "white";
+
+  const memo = {
+    id: createId(),
+    text: content,
+    date: new Date().toISOString(),
+    color: selectedColor
+  };
+
+  const previousOrder = data.memoOrder;
+
+  data.memos.push(memo);
+
+  data.memoOrder = [
+    String(memo.id),
+    ...memoOrderIds().filter(
+      id => id !== String(memo.id)
+    )
+  ];
+
+  if (saveData()) {
+    area.value = "";
+
+    if (colorSelect) {
+      colorSelect.value = "white";
+    }
+
+    renderMemos();
+  } else {
+    data.memos.pop();
+    data.memoOrder = previousOrder;
+  }
+}
+
+/* ========================================
+   メモの表示順序
+======================================== */
+
+function memoOrderIds() {
+  const saved = Array.isArray(data.memoOrder)
+    ? data.memoOrder.map(String)
+    : [];
+
+  const ids = new Set(
+    data.memos.map(memo => String(memo.id))
+  );
+
+  const ordered = saved.filter(
+    id => ids.has(id)
+  );
+
+  const remaining = [...data.memos]
+    .sort((a, b) =>
+      String(b.date || b.createdAt || "")
+        .localeCompare(String(a.date || a.createdAt || ""))
+    )
+    .map(memo => String(memo.id))
+    .filter(id => !ordered.includes(id));
+
+  return [...ordered, ...remaining];
+}
+
+/* ========================================
+   メモの表示期間
+======================================== */
+
+function filteredMemos() {
+  const start = $("start").value;
+  const finish = $("finish").value;
+
+  const positions = new Map(
+    memoOrderIds().map((id, index) => [id, index])
+  );
+
+  return [...data.memos]
+    .filter(memo => {
+      const day = String(
+        memo.date || memo.createdAt || ""
+      ).slice(0, 10);
+
+      return (
+        (!start || day >= start) &&
+        (!finish || day <= finish)
+      );
+    })
+    .sort((a, b) =>
+      (positions.get(String(a.id)) ?? Infinity) -
+      (positions.get(String(b.id)) ?? Infinity)
+    );
+}
+
+/* ========================================
+   メモの位置交換
+======================================== */
+
+function swapMemoPositions(sourceId, targetId) {
+  sourceId = String(sourceId);
+  targetId = String(targetId);
+
+  if (sourceId === targetId) return;
+
+  const order = memoOrderIds();
+
+  const sourceIndex = order.indexOf(sourceId);
+  const targetIndex = order.indexOf(targetId);
+
+  if (sourceIndex < 0 || targetIndex < 0) return;
+
+  [order[sourceIndex], order[targetIndex]] =
+    [order[targetIndex], order[sourceIndex]];
+
+  const previousOrder = data.memoOrder;
+  data.memoOrder = order;
+
+  if (!saveData()) {
+    data.memoOrder = previousOrder;
+    return;
+  }
+
+  renderMemos();
+}
+
+/* ========================================
+   メモのドラッグ操作
+======================================== */
+
+let memoDragState = null;
+
+function clearMemoDragStyles() {
+  document
+    .querySelectorAll("#memoGrid .memoCard")
+    .forEach(card => {
+      card.classList.remove(
+        "memo-dragging",
+        "memo-drop-target"
+      );
+    });
+}
+
+function getMemoDropTarget(x, y) {
+  const element = document.elementFromPoint(x, y);
+
+  return element
+    ? element.closest("#memoGrid .memoCard")
+    : null;
+}
+
+function startMemoDrag(event, card) {
+  if (event.button !== undefined && event.button !== 0) {
+    return;
+  }
+
+  memoDragState = {
+    pointerId: event.pointerId,
+    source: card,
+    startX: event.clientX,
+    startY: event.clientY,
+    dragging: false
+  };
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function moveMemoDrag(event) {
+  const state = memoDragState;
+
+  if (!state || state.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const distance = Math.hypot(
+    event.clientX - state.startX,
+    event.clientY - state.startY
+  );
+
+  if (!state.dragging && distance < 8) return;
+
+  state.dragging = true;
+  state.source.classList.add("memo-dragging");
+
+  document
+    .querySelectorAll("#memoGrid .memo-drop-target")
+    .forEach(card => {
+      card.classList.remove("memo-drop-target");
+    });
+
+  const target = getMemoDropTarget(
+    event.clientX,
+    event.clientY
+  );
+
+  if (target && target !== state.source) {
+    target.classList.add("memo-drop-target");
+  }
+}
+
+function finishMemoDrag(event) {
+  const state = memoDragState;
+
+  if (!state || state.pointerId !== event.pointerId) {
+    
+    return;
+  }
+
+  const target = state.dragging
+    ? getMemoDropTarget(event.clientX, event.clientY)
+    : null;
+
+  const sourceId = state.source.dataset.memoId;
+  const targetId = target ? target.dataset.memoId : null;
+
+  memoDragState = null;
+  clearMemoDragStyles();
+
+  if (targetId && sourceId !== targetId) {
+    swapMemoPositions(sourceId, targetId);
+  }
+}
+
+/* ========================================
+   メモの背景色
+======================================== */
+
+const MEMO_COLORS = {
+  white: "#ffffff",
+  yellow: "#fff5cc",
+  green: "#e5f3df",
+  blue: "#e3f0ff",
+  pink: "#fce5ec"
+};
+
+function getMemoColor(memo) {
+  return MEMO_COLORS[memo.color] || MEMO_COLORS.white;
+}
+
+function renderMemos() {
+  const root = $("memoGrid");
+  root.replaceChildren();
+
+  for (const memo of filteredMemos()) {
+    
+    const card = document.createElement("div");
+    card.className = "memoCard";
+    card.dataset.memoId = String(memo.id);
+    card.style.backgroundColor = getMemoColor(memo);
+
+    const handle = document.createElement("div");
+    handle.className = "memo-drag-handle";
+    handle.textContent = "☰ 移動";
+    handle.title = "ドラッグして別のメモと位置を交換";
+    handle.setAttribute("aria-label", "メモを移動");
+
+    handle.addEventListener("pointerdown", event => {
+      startMemoDrag(event, card);
+    });
+
+    handle.addEventListener("pointermove", moveMemoDrag);
+    handle.addEventListener("pointerup", finishMemoDrag);
+    handle.addEventListener("pointercancel", finishMemoDrag);
+
+    handle.addEventListener("lostpointercapture", () => {
+      if (memoDragState?.source === card) {
+        document.querySelectorAll("#memoGrid .memoCard")
+          .forEach(el => el.classList.remove(
+            "memo-dragging", "memo-drop-target"
+          ));
+        memoDragState = null;
+      }
+    });
+
+    const date = document.createElement("div");
+    date.className = "date";
+    date.textContent = formatDateTime(
+      memo.date || memo.createdAt
+    );
+
+    const content = document.createElement("div");
+    content.className = "content";
+    content.textContent = memo.text || memo.content || "";
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const edit = document.createElement("button");
+    edit.textContent = "編集";
+    edit.onclick = () => editMemo(memo.id);
+
+    const del = document.createElement("button");
+    del.textContent = "削除";
+    del.onclick = () => deleteMemo(memo.id);
+
+    actions.append(edit, del);
+    card.append(handle, date, content, actions);
+    root.append(card);
+  }
+}
+
+
+/* ========================================
+   メモ編集
+======================================== */
+
+function editMemo(id) {
+  const memo = data.memos.find(
+    item => String(item.id) === String(id)
+  );
+
+  if (!memo) return;
+
+  $("modalTitle").textContent = "メモの編集";
+  $("modalBody").replaceChildren();
+
+  const area = document.createElement("textarea");
+  area.value = memo.text || memo.content || "";
+
+  const colorLabel = document.createElement("label");
+  colorLabel.textContent = "メモの背景色";
+
+  const colorPicker = document.createElement("div");
+  colorPicker.className = "memo-color-picker";
+
+  let selectedColor = MEMO_COLORS[memo.color]
+    ? memo.color
+    : "white";
+
+  const colorOptions = [
+    ["white", "白"],
+    ["yellow", "黄色"],
+    ["green", "緑"],
+    ["blue", "青"],
+    ["pink", "ピンク"]
+  ];
+
+  const colorButtons = [];
+
+  for (const [key, label] of colorOptions) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "memo-color-option";
+    button.style.backgroundColor = MEMO_COLORS[key];
+    button.textContent = label;
+    button.dataset.color = key;
+
+    button.onclick = () => {
+      selectedColor = key;
+
+      colorButtons.forEach(item => {
+        item.classList.toggle(
+          "selected",
+          item.dataset.color === selectedColor
+        );
+      });
+    };
+
+    button.classList.toggle(
+      "selected",
+      key === selectedColor
+    );
+
+    colorButtons.push(button);
+    colorPicker.append(button);
+  }
+
+  const save = document.createElement("button");
+  save.textContent = "保存";
+  save.className = "orange";
+
+  save.onclick = () => {
+    const text = area.value.trim();
+
+    if (!text) {
+      alert("メモを入力してください。");
+      return;
+    }
+    
+    const previousText = memo.text;
+    const previousColor = memo.color;
+
+    memo.text = text;
+    memo.color = selectedColor;
+
+    if (saveData()) {
+      closeModal();
+      renderMemos();
+    } else {
+      memo.text = previousText;
+      memo.color = previousColor;
+    }
+  };
+
+  $("modalBody").append(
+    area,
+    colorLabel,
+    colorPicker,
+    save
+  );
+
+  $("modal").classList.remove("hidden");
+
+}
+
+function saveEditedMemo(id) {
+  editMemo(id);
+}
+
+function deleteMemo(id) {
+  if (
+    !confirm(
+      "このメモを削除しますか？"
+    )
+  ) {
+
+    return;
+  }
+
+  data.memos = data.memos.filter(
+    memo => memo.id !== id
+  );
+
+  if (saveData()) {
+    renderMemos();
+  }
+}
+
+/* ========================================
+   メモの期間内一括削除
+======================================== */
+
+function deleteRange() {
+  const start =
+    $("start").value;
+
+  const finish =
+    $("finish").value;
+
+  if (!start || !finish) {
+    alert(
+      "開始日と終了日を入力してください。"
+    );
+    return;
+  }
+
+  if (start > finish) {
+    alert(
+      "日付の範囲を確認してください。"
+    );
+    return;
+  }
+
+  if (
+    !confirm(
+      
+      "指定期間のメモをすべて削除しますか？"
+    )
+  ) {
+    return;
+  }
+
+  data.memos = data.memos.filter(
+    memo => {
+      const day = String(
+        memo.date ||
+        memo.createdAt ||
+        ""
+      ).slice(0, 10);
+
+      return (
+        day < start ||
+        day > finish
+      );
+    }
+  );
+
+  if (saveData()) {
+    renderMemos();
+  }
+}
+
+/* ========================================
+   モーダルを閉じる
+======================================== */
+
+function closeModal() {
+  pendingDrugRegistration = null;
+
+  $("modal").classList.add("hidden");
+  $("modalBody").replaceChildren();
+}
+
+
+/* ========================================
+   学習クイズ（サーバー不要版）
+======================================== */
+
+let TOKEN_QUESTIONS = [];
+
+
+async function loadTokenQuestions() {
+  const response = await fetch("./question.json", {
+  cache: "no-store"
+});
+
+  if (!response.ok) {
+    throw new Error(
+      `問題ファイルを取得できませんでした（HTTP ${response.status}）`
+    );
+  }
+
+  const questions = await response.json();
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    throw new Error("問題が登録されていません。");
+  }
+
+  const ids = new Set();
+
+  for (const q of questions) {
+    if (
+      !q ||
+      typeof q.id !== "string" ||
+      !q.id ||
+      ids.has(q.id) ||
+      typeof q.question !== "string" ||
+      !q.question ||
+      !Array.isArray(q.answers) ||
+      !q.answers.length ||
+      !q.answers.every(
+        a => typeof a === "string" && a.trim()
+      ) ||
+      typeof q.explanation !== "string" ||
+      typeof q.field !== "string" ||
+      typeof q.difficulty !== "string"
+    ) {
+      throw new Error(
+        "クイズの問題形式またはIDに誤りがあります。"
+      );
+    }
+
+    ids.add(q.id);
+  }
+
+  TOKEN_QUESTIONS = questions;
+}
+
+const TOKEN_INITIAL_REVEALS = 8;
+
+const tokenById = id =>
+  TOKEN_QUESTIONS.find(q => q.id === id);
+
+const tokenShuffle = ids => {
+  const result = [...ids];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [result[i], result[j]] =
+      [result[j], result[i]];
+  }
+
+  return result;
+};
+
+/* ========================================
+   クイズの状態管理
+======================================== */
+
+function initTokenState() {
+  if (!data.token || typeof data.token !== "object") {
+    data.token = {
+      enabled: false,
+      earned: 0,
+      spent: 0,
+      correct: 0,
+      round: 1,
+      order: [],
+      index: 0,
+      opened: [],
+      solved: false,
+      awards: {}
+    };
+  }
+
+  const t = data.token;
+
+  
+  // 問題ファイルと保存済みの出題順序を同期する
+  const currentIds = TOKEN_QUESTIONS.map(q => q.id);
+  const validIds = new Set(currentIds);
+
+  const oldOrder = Array.isArray(t.order) ? t.order : [];
+  const oldIndex = Number.isInteger(t.index) ? t.index : 0;
+  const currentId = oldOrder[oldIndex];
+
+  const seenIds = new Set();
+
+  // 現在も存在する問題だけ残す
+  const retainedOrder = oldOrder.filter(id => {
+    if (!validIds.has(id) || seenIds.has(id)) {
+      return false;
+    }
+
+    seenIds.add(id);
+    return true;
+  });
+
+  // 新しく追加された問題を取得する
+  const addedIds = currentIds.filter(
+    id => !seenIds.has(id)
+  );
+
+  const orderChanged =
+    retainedOrder.length !== oldOrder.length ||
+    addedIds.length > 0;
+
+  if (orderChanged || !oldOrder.length) {
+
+    // 既存の順番を維持し、新しい問題を末尾に追加する
+    t.order = retainedOrder.length
+      ? [...retainedOrder, ...tokenShuffle(addedIds)]
+      : tokenShuffle(currentIds);
+
+    // 現在の問題を維持する
+    const updatedIndex = t.order.indexOf(currentId);
+
+    if (updatedIndex >= 0) {
+      t.index = updatedIndex;
+    } else {
+
+      // 現在の問題が削除された場合
+      t.index = Math.min(
+        Math.max(oldIndex, 0),
+        t.order.length - 1
+      );
+
+      t.opened = [];
+      t.solved = false;
+    }
+  }
+
+  if (!Array.isArray(t.opened)) {
+    t.opened = [];
+  }
+
+  if (!t.awards || typeof t.awards !== "object") {
+    t.awards = {};
+  }
+
+  if (!Number.isFinite(t.earned)) t.earned = 0;
+  if (!Number.isFinite(t.spent)) t.spent = 0;
+  if (!Number.isFinite(t.correct)) t.correct = 0;
+  if (!Number.isFinite(t.round)) t.round = 1;
+
+  if (
+    !Number.isInteger(t.index) ||
+    t.index < 0 ||
+    t.index >= t.order.length
+  ) {
+    t.index = 0;
+  }
+
+  if (!tokenById(t.order[t.index])) {
+    t.order = tokenShuffle(
+      TOKEN_QUESTIONS.map(q => q.id)
+    );
+    t.index = 0;
+    t.opened = [];
+    t.solved = false;
+  }
+
+  const length = Array.from(
+    tokenById(t.order[t.index]).question
+  ).length;
+
+  if (!t.opened.length && !t.solved) {
+    t.opened = tokenShuffle(
+      Array.from({ length }, (_, i) => i)
+    ).slice(
+      0,
+      Math.min(TOKEN_INITIAL_REVEALS, length)
+    );
+  }
+
+  saveData();
+}
+
+/* ========================================
+   ポイント残高
+======================================== */
+
+function tokenBalance() {
+  return data.token.earned - data.token.spent;
+}
+
+function tokenCurrent() {
+  return tokenById(
+    data.token.order[data.token.index]
+  );
+}
+
+function toggleTokenMode(enabled) {
+  data.token.enabled = !!enabled;
+  saveData();
+  renderTokenUI();
+}
+
+/* ========================================
+   クイズ画面の表示
+======================================== */
+
+function renderTokenUI() {
+  const t = data.token;
+
+  $("tokenHome").hidden = !t.enabled;
+
+  $("tokenSummary").textContent =
+    `${tokenBalance()}pt ／ 正解${t.correct}問`;
+
+  if (!t.enabled) return;
+
+  const q = tokenCurrent();
+
+  $("tokenQuizProgress").textContent =
+    `${t.round}周目・第${t.index + 1}問 / ${t.order.length}問`;
+
+  $("tokenBalance").textContent =
+    `${tokenBalance()}pt（累計正解${t.correct}問）`;
+
+  $("tokenQuizMeta").textContent =
+    `分野：${q.field}`;
+
+  const container = $("tokenMaskedQuestion");
+  container.replaceChildren();
+
+  const chars = Array.from(q.question);
+
+  chars.forEach((char, i) => {
+    const span = document.createElement("span");
+    const visible =
+      t.solved || t.opened.includes(i);
+
+    span.className =
+      `token-char ${visible ? "open" : "closed"}`;
+
+    span.textContent = visible ? char : "■";
+
+    container.append(span);
+  });
+
+  $("tokenRevealInfo").textContent =
+    `${t.solved ? chars.length : t.opened.length} / ${chars.length}文字を開示`;
+
+  $("tokenRevealButton").disabled =
+    t.solved ||
+    tokenBalance() < 1 ||
+    t.opened.length >= chars.length;
+
+  $("tokenAnswerArea").hidden = !!t.solved;
+
+  $("tokenAnswerButton").disabled =
+    tokenBalance() < 1 || !!t.solved;
+
+  $("tokenSolution").hidden = !t.solved;
+
+  if (t.solved) {
+    $("tokenFullQuestion").textContent = q.question;
+    $("tokenCorrectAnswer").textContent = q.answers[0];
+
+    $("tokenExplanation").textContent =
+      q.explanation + `（難易度：${q.difficulty}）`;
+  }
+}
+
+/* ========================================
+   1ポイントで1文字開示
+======================================== */
+
+function revealTokenCharacter() {
+  const t = data.token;
+
+  if (
+    !t.enabled ||
+    t.solved ||
+    tokenBalance() < 1
+  ) {
+    return;
+  }
+
+  const available = Array.from(
+    tokenCurrent().question
+  )
+    .map((_, i) => i)
+    .filter(i => !t.opened.includes(i));
+
+  if (!available.length) return;
+
+  t.opened.push(
+    available[
+      Math.floor(Math.random() * available.length)
+    ]
+  );
+
+  t.spent++;
+
+  saveData();
+  renderTokenUI();
+}
+
+/* ========================================
+   解答判定
+======================================== */
+
+function tokenNormalize(s) {
+  return String(s || "")
+    .normalize("NFKC")
+    .replace(/[\s　・･]/g, "")
+    .toLowerCase();
+}
+
+function submitTokenAnswer() {
+  const t = data.token;
+
+  if (
+    !t.enabled ||
+    t.solved ||
+    tokenBalance() < 1
+  ) {
+    return;
+  }
+
+  const answer = $("tokenAnswer").value.trim();
+
+  if (!answer) {
+    $("tokenAnswerFeedback").textContent =
+      "答えを入力してください。";
+    return;
+  }
+
+  t.spent++;
+
+  const correct = tokenCurrent().answers.some(
+    a => tokenNormalize(a) === tokenNormalize(answer)
+  );
+
+  if (correct) {
+    t.solved = true;
+    t.correct++;
+  }
+
+  saveData();
+  renderTokenUI();
+
+  if (!correct) {
+    $("tokenAnswerFeedback").textContent =
+      "不正解です。文字を開示するか、もう一度考えてみましょう。";
+  }
+}
+
+/* ========================================
+   次の問題
+======================================== */
+
+function nextTokenQuestion() {
+  const t = data.token;
+
+  if (!t.solved) return;
+
+  t.index++;
+
+  if (t.index >= t.order.length) {
+    t.round++;
+    t.order = tokenShuffle(
+      TOKEN_QUESTIONS.map(q => q.id)
+    );
+    t.index = 0;
+  }
+
+  t.solved = false;
+
+  const length = Array.from(
+    tokenCurrent().question
+  ).length;
+
+  t.opened = tokenShuffle(
+    Array.from({ length }, (_, i) => i)
+  ).slice(
+    0,
+    Math.min(TOKEN_INITIAL_REVEALS, length)
+  );
+
+  $("tokenAnswer").value = "";
+  $("tokenAnswerFeedback").textContent = "";
+
+  saveData();
+  renderTokenUI();
+}
+
+/* ========================================
+   服薬時のポイント付与
+======================================== */
+
+function grantTokenForMedication(awardId, historyIds) {
+  if (
+    !data.token.enabled ||
+    !historyIds.length
+  ) {
+    return;
+  }
+
+  data.token.awards[awardId] = {
+    historyIds: [...historyIds],
+    revoked: false,
+    perDrug: true
+  };
+
+  // 服薬した薬剤1種類につき1pt
+  data.token.earned += historyIds.length;
+}
+
+/* ========================================
+   服薬取消時のポイント調整
+======================================== */
+
+function revokeTokenForCanceledMedication(awardId) {
+  const t = data.token;
+  const award = t.awards[awardId];
+
+  if (!award || award.revoked) return;
+
+  const canceledCount = award.historyIds.filter(id =>
+    data.history.some(
+      h => h.id === id && h.canceled
+    )
+  ).length;
+
+  if (award.perDrug) {
+    const previouslyRevoked =
+      Number(award.revokedCount) || 0;
+      
+    if (canceledCount > previouslyRevoked) {
+      t.earned = Math.max(
+        0,
+        t.earned -
+          (canceledCount - previouslyRevoked)
+      );
+
+      award.revokedCount = canceledCount;
+    }
+
+    if (
+      canceledCount === award.historyIds.length
+    ) {
+      award.revoked = true;
+    }
+  } else if (
+    canceledCount === award.historyIds.length
+  ) {
+    // 旧仕様で一括1pt付与した履歴は、
+    // 全件取り消されたときに1ptを減算
+    award.revoked = true;
+
+    t.earned = Math.max(
+      0,
+      t.earned - 1
+    );
+  }
+}
+
+/* ========================================
+   アプリの初期化
+======================================== */
+
+async function initializeApp() {
+  try {
+    await loadTokenQuestions();
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      "クイズの問題を読み込めませんでした。" +
+      "question.json を同じフォルダに配置し、" +
+      "GitHub Pagesから開いてください。\n" +
+      error.message
+    );
+
+    const quizHome = $("tokenHome");
+
+    if (quizHome) {
+      quizHome.hidden = true;
+    }
+
+    // クイズの読み込みに失敗しても、
+    // 服薬管理機能は使用できるようにする
+    TOKEN_QUESTIONS = [
+      {
+        id: "unavailable",
+        field: "",
+        difficulty: "",
+        question: "問題を読み込めませんでした",
+        answers: [""],
+        explanation: ""
+      }
+    ];
+  }
+
+
+initTokenState();
+
+/* クイズを常時有効化 */
+data.token.enabled = true;
+
+/* 今日は何の日を読み込む */
+await loadTodayTopics();
+renderTodayMessage();
+
+/* 日付が変わったときに表示を更新 */
+setInterval(renderTodayMessage, 60000);
+
+/* クイズの問題が読み込めなかった場合 */
+if (
+  TOKEN_QUESTIONS[0]?.id === "unavailable"
+) {
+  data.token.enabled = false;
+}
+
+renderTokenUI();
+updateClock();
+
+
+  setInterval(
+    updateClock,
+    1000
+  );
+
+  $("ocrText").addEventListener(
+    "input",
+    updateOCRLines
+  );
+
+  $("prescriptionDays").addEventListener(
+    "input",
+    () => {
+      calculateInitialRemaining();
+    }
+  );
+
+  $("remaining").addEventListener(
+    "input",
+    () => {
+      remainingManuallyEdited = true;
+    }
+  );
+
+  $("prnCount").addEventListener(
+    "input",
+    calculateInitialRemaining
+  );
+
+  $("drugType").addEventListener(
+    "change",
+    () => {
+      remainingManuallyEdited = false;
+      updateDrugTypeFields();
+    }
+  );
+
+  resetDrugForm();
+
+  renderSlots();
+  renderDrugs();
+  renderMemos();
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  initializeApp
+);
+
+
+/* ========================================
+   今日は何の日
+======================================== */
+
+const TODAY_SWITCH_KEY = "clinicTodayEnabledV1";
+
+let todayTopics = {};
+let lastTodayKey = "";
+
+async function loadTodayTopics() {
+  try {
+    const response = await fetch("today.json", {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const parsed = await response.json();
+
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error("JSONの形式が不正です");
+    }
+
+    todayTopics = parsed;
 
   } catch (error) {
     console.warn(
-      "お知らせの取得に失敗しました。",
+      "today.json を読み込めませんでした",
       error
     );
 
-    list.replaceChildren();
-    panel.classList.add("hidden");
+    todayTopics = {};
   }
 }
 
-initializeApp();
+function toggleTodayFeature(enabled) {
+  localStorage.setItem(
+    TODAY_SWITCH_KEY,
+    String(!!enabled)
+  );
 
-/* =========================================
-   共通設定メニュー・アプリの共有
-========================================= */
+  renderTodayMessage();
+}
 
-(() => {
-  const settings =
-    document.getElementById("appSettingsDialog");
+function renderTodayMessage() {
+  const area = document.getElementById("todayMessage");
 
-  const share =
-    document.getElementById("appShareDialog");
+  if (!area) return;
 
+  const enabled =
+    localStorage.getItem(TODAY_SWITCH_KEY) === "true";
+
+  const sw = document.getElementById("todayEnabled");
+
+  if (sw) {
+    sw.checked = enabled;
+  }
+
+  area.hidden = !enabled;
+
+  if (!enabled) return;
+
+  const date = new Date();
+
+  const key =
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0");
+
+  const entry = todayTopics[key];
+
+  const messages = Array.isArray(entry)
+    ? entry
+    : typeof entry === "string"
+      ? [entry]
+      : [];
+
+  area.textContent = messages.length
+    ? messages.join(" ／ ")
+    : "今日は何の日？（この日の登録はありません）";
+
+  lastTodayKey = key;
+}
+
+
+/* ========================================
+   データ移行
+======================================== */
+
+function openTransferDialog() {
+  const body = document.getElementById("modalBody");
+
+  body.replaceChildren();
+
+  const note = document.createElement("p");
+
+  note.textContent =
+    "薬・服薬記録・メモ・クイズの進行状況を" +
+    "JSONファイルで移行します。" +
+    "読み込みは現在のデータをすべて置き換えます。";
+
+  const exportButton = document.createElement("button");
+
+  exportButton.type = "button";
+  exportButton.textContent = "データを書き出す";
+  exportButton.onclick = exportClinicData;
+
+  const label = document.createElement("label");
+
+  label.textContent =
+    "データを読み込む（JSONファイルを選択）";
+
+  const input = document.createElement("input");
+
+  input.type = "file";
+  input.accept = ".json,application/json";
+
+  input.onchange = () => importClinicData(input);
+
+  label.append(input);
+
+  body.append(note, exportButton, label);
+
+  document.getElementById("modalTitle").textContent =
+    "データ移行";
+
+  document.getElementById("modal")
+    .classList.remove("hidden");
+}
+
+function exportClinicData() {
+  const payload = {
+    format: "clinicAppBackup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: data
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+
+  a.download =
+    "服薬管理バックアップ_" +
+    new Date().toISOString().slice(0, 10) +
+    ".json";
+
+  document.body.append(a);
+
+  a.click();
+  a.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 30000);
+}
+
+async function importClinicData(input) {
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  try {
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error(
+        "20MB以下のファイルを選択してください"
+      );
+    }
+
+    const parsed = JSON.parse(await file.text());
+
+    if (
+      parsed?.format !== "clinicAppBackup" ||
+      parsed.version !== 1
+    ) {
+      throw new Error(
+        "このアプリで書き出したバックアップではありません"
+      );
+    }
+
+    const restored = parsed.data;
+
+    if (
+      !restored ||
+      typeof restored !== "object" ||
+      !Array.isArray(restored.drugs) ||
+      !Array.isArray(restored.history) ||
+      !Array.isArray(restored.memos)
+    ) {
+      throw new Error(
+        "バックアップ内のデータ形式が正しくありません"
+      );
+    }
+
+    const confirmed = confirm(
+      "現在の薬・服薬記録・メモ・クイズ進行状況を" +
+      "バックアップで上書きします。" +
+      "元に戻せません。続行しますか？"
+    );
+
+    if (!confirmed) return;
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(restored)
+    );
+
+    alert(
+      "読み込みました。画面を再読み込みします。"
+    );
+
+    location.reload();
+
+  } catch (error) {
+    alert(
+      "読み込みに失敗しました：" + error.message
+    );
+
+  } finally {
+    input.value = "";
+  }
+}
+
+
+/* ========================================
+   アプリ共有
+======================================== */
+
+function openShareDialog() {
   const appUrl =
-    "https://kotom0919.github.io/Activity-Log-ver.2/";
+    "https://kotom0919.github.io/Medication-management-app/";
 
-  function toggle(el, open) {
-    el.classList.toggle("hidden", !open);
-    el.setAttribute("aria-hidden", String(!open));
-  }
+  const body = document.getElementById("modalBody");
 
-  function openSettings() {
-    toggle(settings, true);
-  }
+  body.replaceChildren();
 
-  function closeSettings() {
-    toggle(settings, false);
-  }
+  const url = document.createElement("input");
 
-  function closeShare() {
-    toggle(share, false);
-  }
+  url.type = "text";
+  url.readOnly = true;
+  url.value = appUrl;
 
-  // 設定を開く
-  document.getElementById("openSettingsDialogButton")
-    .addEventListener("click", openSettings);
+  url.setAttribute(
+    "aria-label",
+    "アプリのURL"
+  );
 
-  // 設定を閉じる
-  document.getElementById("closeAppSettingsButton")
-    .addEventListener("click", closeSettings);
+  const copy = document.createElement("button");
 
-  settings.addEventListener("click", event => {
-    if (event.target === settings) {
-      closeSettings();
+  copy.type = "button";
+  copy.textContent = "URLをコピー";
+
+  copy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(appUrl);
+
+      alert("URLをコピーしました");
+
+    } catch (error) {
+      url.select();
+
+      alert(
+        "URLを選択しました。コピーしてください"
+      );
     }
+  };
+
+  const qr = document.createElement("img");
+
+  qr.src =
+    "https://api.qrserver.com/v1/create-qr-code/" +
+    "?size=240x240&data=" +
+    encodeURIComponent(appUrl);
+
+  qr.alt = "アプリのURLのQRコード";
+  qr.width = 240;
+  qr.height = 240;
+  qr.className = "share-qr";
+
+  const hint = document.createElement("p");
+
+  hint.className = "hint";
+
+  hint.textContent =
+    "QRコードの表示にはインターネット接続が必要です。";
+
+  body.append(url, copy, qr, hint);
+
+  document.getElementById("modalTitle").textContent =
+    "アプリを共有";
+
+  document.getElementById("modal")
+    .classList.remove("hidden");
+}
+// 薬剤の重複判定用キーを作成
+function drugRegistrationKey(drug) {
+  const norm = value =>
+    String(value ?? "")
+      .normalize("NFKC")
+      .replace(/\s+/g, "");
+
+  const type =
+    drug.type === "prn" ? "prn" : "regular";
+
+  return JSON.stringify({
+    name: norm(drug.name),
+    strength: norm(drug.strength),
+    type,
+    prescribed: norm(drug.prescribed),
+
+    total: type === "regular"
+      ? norm(drug.total) : "",
+
+    prescriptionDays: type === "regular"
+      ? norm(drug.prescriptionDays) : "",
+
+    prnCount: type === "prn"
+      ? norm(drug.prnCount) : "",
+
+    timings: type === "regular"
+      ? normalizedTimings(drug).map(norm).sort()
+      : [],
+
+    prnTiming: type === "prn"
+      ? norm(drug.prnTiming) : ""
   });
+}
 
-  // ========================================
-  // データの移行
-  // ========================================
+// 登録済みの薬と比較
+function isDuplicateDrug(drug, excludeId = "") {
+  const key = drugRegistrationKey(drug);
 
-  document.getElementById("settingsTransferButton")
-    .addEventListener("click", () => {
-      closeSettings();
+  return data.drugs.some(existing =>
+    existing.id !== excludeId &&
+    drugRegistrationKey(existing) === key
+  );
+}
 
-      document.getElementById("openTransferDialogButton")
-        .click();
-    });
+// 複数薬剤の重複も確認
+function partitionRegistrationDuplicates(
+  drugs,
+  prescribed,
+  excludeId = ""
+) {
+  const unique = [];
+  const duplicates = [];
+  const seen = new Set();
 
-  // ========================================
-  // アプリをシェア
-  // ========================================
+  for (const drug of drugs) {
+    const candidate = {
+      ...drug,
+      prescribed
+    };
 
-  document.getElementById("settingsShareButton")
-    .addEventListener("click", () => {
-      closeSettings();
+    const key = drugRegistrationKey(candidate);
 
-      document.getElementById("appShareUrl").value =
-        appUrl;
-
-      document.getElementById("appShareMessage")
-        .textContent = "";
-
-      document.getElementById("appShareQr").src =
-        "https://api.qrserver.com/v1/create-qr-code/" +
-        "?size=220x220&data=" +
-        encodeURIComponent(appUrl);
-
-      toggle(share, true);
-    });
-
-  document.getElementById("closeAppShareButton")
-    .addEventListener("click", closeShare);
-
-  share.addEventListener("click", event => {
-    if (event.target === share) {
-      closeShare();
+    if (
+      seen.has(key) ||
+      isDuplicateDrug(candidate, excludeId)
+    ) {
+      duplicates.push(candidate);
+    } else {
+      seen.add(key);
+      unique.push(drug);
     }
-  });
+  }
 
-  // URLをコピー
-  document.getElementById("copyAppShareButton")
-    .addEventListener("click", async () => {
-      const message =
-        document.getElementById("appShareMessage");
+  return { unique, duplicates };
+}
 
-      try {
-        await navigator.clipboard.writeText(appUrl);
-        message.textContent = "URLをコピーしました.";
-      } catch (error) {
-        const field =
-          document.getElementById("appShareUrl");
 
-        field.focus();
-        field.select();
+async function loadNotices() {
+  const response = await fetch(
+    "./notices.json?t=" + Date.now(),
+    { cache: "no-store" }
+  );
 
-        message.textContent =
-          "URLを選択しました。コピーしてください。";
-      }
-    });
+  if (!response.ok) {
+    throw new Error("お知らせの取得に失敗しました");
+  }
 
-  // スマホの共有機能
-  document.getElementById("nativeAppShareButton")
-    .addEventListener("click", async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: "活動記録表",
-            url: appUrl
-          });
-        } catch (error) {
-          if (error.name !== "AbortError") {
-            document.getElementById("appShareMessage")
-              .textContent =
-              "共有できませんでした。URLコピーをご利用ください。";
-          }
-        }
-      } else {
-        document.getElementById("copyAppShareButton")
-          .click();
-      }
-    });
+  const data = await response.json();
+  return data.notices;
+}
 
-  // ========================================
-  // ほかのアプリを探す
-  // ========================================
+/* =====================================
+   ほかのアプリを探す
+===================================== */
 
-  document.getElementById("settingsOtherAppsButton")
-    .addEventListener("click", () => {
-      const menuButton =
-        document.getElementById("shared-app-menu-button");
+document.getElementById("openOtherAppsButton")
+  .addEventListener("click", () => {
 
-      if (!menuButton) {
-        alert(
-          "アプリ一覧を読み込めませんでした。" +
-          "通信状態とApp-menuの公開設定を確認してください。"
-        );
-        return;
-      }
+    const menuButton =
+      document.getElementById("shared-app-menu-button");
 
-      closeSettings();
-      menuButton.click();
-    });
-
-  // ========================================
-  // Escキーで閉じる
-  // ========================================
-
-  document.addEventListener("keydown", event => {
-    if (event.key !== "Escape") return;
-
-    if (!share.classList.contains("hidden")) {
-      closeShare();
-    } else if (!settings.classList.contains("hidden")) {
-      closeSettings();
+    if (!menuButton) {
+      alert(
+        "アプリ一覧を読み込めませんでした。" +
+        "通信状態を確認してください。"
+      );
+      return;
     }
+
+    menuButton.click();
   });
-})();

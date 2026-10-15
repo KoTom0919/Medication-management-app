@@ -1,574 +1,536 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="ja">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <meta name="theme-color" content="#58a98a">
-
-  <title>活動記録表</title>
-
-  <!-- iPhoneのホーム画面に表示する名前 -->
-  <meta name="apple-mobile-web-app-title" content="活動記録アプリ">
-
-  <!-- ホーム画面から起動したときの表示 -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-
-  <!-- ホーム画面のアイコン -->
-  <link rel="apple-touch-icon" href="./icon.png?v=20261015">
-
-  <!-- ブラウザのアイコン -->
-  <link rel="icon" type="image/png" href="./icon.png?v=20261015">
-
-
-  <link rel="manifest" href="./manifest.json">
-
-  <link rel="stylesheet" href="style.css?v=33">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>お薬管理</title>
+    <meta name="apple-mobile-web-app-title" content="お薬管理">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#E5A45C">
+    <link rel="apple-touch-icon" href="./icon.png?v=20261014">
+    <link rel="icon" type="image/png" href="./icon.png?v=20261014">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css?v=20261013-03">
+    <script src="script.js?v=20261013-04"></script>
 </head>
 
-
 <body>
-  <header class="app-header">
-    <h1>活動記録表</h1>
-    <button id="openPrintDialogButton" class="header-print-button" type="button">
-      印刷
-    </button>
+    <main id="app">
 
-    <button id="openSettingsDialogButton" class="header-transfer-button" type="button" aria-haspopup="dialog">
-      設定
-    </button>
+        <!-- ホーム -->
+        <section id="home" class="page active">
+            <header class="home-top-header">
+                <div class="header-clock-area">
+                    <div class="glass-clock-header">
+                        <div class="glass-clock" id="clock">
+                            <div class="glass-clock-top">
+                                <span class="clock-icon">◷</span>
+                                <span id="clockWeekday">TODAY</span>
+                            </div>
+                            <div class="glass-clock-time">
+                                <span id="clockHourMinute">00:00</span>
+                                <span id="clockSeconds">:00</span>
+                            </div>
+                            <div class="glass-clock-date" id="clockDate">
+                                日付を取得中
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-quiz-area">
+                    <label class="token-toggle">
+                        <span>今日は何の日</span>
+                        <input id="todayEnabled" type="checkbox" onchange="toggleTodayFeature(this.checked)"
+                            role="switch">
+                        <span class="token-switch" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </header>
 
-  </header>
+            <div id="todayMessage" class="today-message" hidden aria-live="polite"></div>
 
-  <main>
+            <div class="panel green">
+                <div class="medication-record-heading">
+                    <h2>服薬記録</h2>
+                    <button type="button" class="wide greenbtn" onclick="showPage('history')">
+                        記録を確認する
+                    </button>
+                </div>
+                <div id="slots" class="slots"></div>
+            </div>
 
-    <!-- お知らせ表示欄 -->
-    <section id="noticesPanel" class="notices-panel hidden" aria-label="お知らせ" aria-live="polite">
-      <div id="noticesList"></div>
-    </section>
+            <div class="panel blue">
+                <h2 class="medication-management-title">お薬の管理</h2>
+                <div class="two">
+                    <button type="button" onclick="openNewDrugForm()">
+                        <span class="med-pop-icon register-icon" aria-hidden="true">💊</span>
+                        <span>登録</span>
+                    </button>
+                    <button type="button" onclick="showPage('drugs')">
+                        <span class="med-pop-icon confirm-icon" aria-hidden="true">📋</span>
+                        <span>確認</span>
+                    </button>
+                </div>
+            </div>
 
-    <!-- 記録入力画面 -->
-    <section id="inputPage" class="page active">
-      <div class="card form-card">
-        <h2>活動を記録</h2>
+            <div id="tokenHome" class="panel token-panel" hidden>
+                <div class="token-summary">
+                    <strong>クイズ</strong>
+                    <span id="tokenSummary"></span>
+                </div>
+                <button type="button" class="wide" onclick="showPage('quiz')">
+                    クイズを開く
+                </button>
+            </div>
 
-        <label for="recordDate">日付</label>
-        <input id="recordDate" type="date">
+            <div class="home-tools two">
+                <button type="button" onclick="openTransferDialog()">データ移行</button>
+                <button type="button" onclick="openShareDialog()">アプリを共有</button>
+            </div>
 
-        <label for="recordTime">時刻</label>
-        <div class="time-row">
-          <input id="recordTime" type="text" inputmode="numeric" pattern="[0-9:]*" maxlength="5" placeholder="例：800"
-            autocomplete="off">
-          <button id="nowButton" class="sub-button" type="button">
-            現在時刻
-          </button>
-        </div>
+            <div class="panel yellow">
+                <div class="memo-heading-row">
+                    <h2>メモ</h2>
+                    <div class="memo-new-color">
+                        <label for="quickMemoColor">背景色</label>
+                        <select id="quickMemoColor">
+                            <option value="white">白</option>
+                            <option value="yellow">淡い黄色</option>
+                            <option value="green">淡い緑</option>
+                            <option value="blue">淡い青</option>
+                            <option value="pink">淡いピンク</option>
+                        </select>
+                    </div>
+                </div>
+                <textarea id="quickMemo" placeholder="気づいたことをメモ"></textarea>
+                <div class="two">
+                    <button type="button" onclick="showPage('memos')">
+                        メモ一覧へ
+                    </button>
+                    <button type="button" class="orange" onclick="addMemo('quickMemo')">
+                        追加
+                    </button>
+                </div>
+            </div>
+        </section>
 
-        <div class="activity-label-row">
-          <label for="activity">活動内容</label>
-          <button id="openRoutineButton" class="routine-open-button" type="button">
-            定期的な活動
-          </button>
-        </div>
 
-        <textarea id="activity" rows="4" maxlength="300" placeholder="例：散歩を30分した"></textarea>
+        <!-- クイズ -->
+        <section id="quiz" class="page">
+
+            <div class="history-page-heading">
+                <h1>クイズ</h1>
+                <button type="button" onclick="showPage('home')">
+                    ホームへ
+                </button>
+            </div>
+
+            <div class="panel token-panel" id="tokenQuizPanel">
+
+                <div class="token-summary">
+                    <strong id="tokenQuizProgress"></strong>
+                    <strong id="tokenBalance"></strong>
+                </div>
+
+                <p id="tokenQuizMeta"></p>
+
+                <div id="tokenMaskedQuestion" class="token-masked" aria-label="黒塗りされた問題文"></div>
+
+                <p id="tokenRevealInfo" class="hint"></p>
+
+                <button id="tokenRevealButton" type="button" class="wide" onclick="revealTokenCharacter()">
+                    ランダムに1文字開示（1pt）
+                </button>
+
+                <div id="tokenAnswerArea">
+                    <label for="tokenAnswer">回答</label>
+
+                    <input id="tokenAnswer" type="text" autocomplete="off" placeholder="答えを入力">
+
+                    <button id="tokenAnswerButton" type="button" class="wide" onclick="submitTokenAnswer()">
+                        回答する（1pt）
+                    </button>
+
+                    <p id="tokenAnswerFeedback" role="status"></p>
+                </div>
+
+                <div id="tokenSolution" hidden>
+                    <h2>正解！</h2>
+
+                    <p id="tokenFullQuestion"></p>
+
+                    <p>
+                        <strong>答え：</strong>
+                        <span id="tokenCorrectAnswer"></span>
+                    </p>
+
+                    <p id="tokenExplanation"></p>
+
+                    <button type="button" class="wide orange" onclick="nextTokenQuestion()">
+                        次の問題へ
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
 
 
-        <!-- 気分の設定画面 -->
-        <div id="moodSettingsPanel" class="card mood-settings-panel hidden">
-          <h3>気分の設定</h3>
+        <!-- お薬一覧 -->
+        <section id="drugs" class="page">
+            <h1>お薬の管理</h1>
+            <div class="toolbar">
+                <button type="button" onclick="showPage('home')">
+                    ホーム
+                </button>
+                <button type="button" class="orange" onclick="openNewDrugForm()">
+                    追加
+                </button>
+            </div>
 
-          <div class="mood-setting-grid">
-            <label>
-              最小値
-              <input id="moodMin" type="number" step="any">
-            </label>
+            <div class="panel blue">
+                <div class="drug-list-switch" role="group" aria-label="お薬の表示切り替え">
+                    <button type="button" id="currentDrugsButton" class="selected" aria-pressed="true"
+                        onclick="switchDrugList('current')">
+                        現在のお薬
+                    </button>
+                    <button type="button" id="pastDrugsButton" aria-pressed="false" onclick="switchDrugList('past')">
+                        過去のお薬
+                    </button>
+                </div>
 
-            <label>
-              最大値
-              <input id="moodMax" type="number" step="any">
-            </label>
+                <!-- お薬の検索 -->
+                <form id="drugSearchForm" class="history-search-panel drug-search-panel"
+                    onsubmit="event.preventDefault(); renderDrugs();">
+                    <h2>検索・絞り込み</h2>
+                    <div class="history-search-dates">
+                        <label for="drugSearchStart">
+                            処方日（開始）
+                            <input type="date" id="drugSearchStart">
+                        </label>
+                        <label for="drugSearchEnd">
+                            処方日（終了）
+                            <input type="date" id="drugSearchEnd">
+                        </label>
+                    </div>
+                    <label for="drugSearchName">
+                        薬剤名
+                        <input type="search" id="drugSearchName" placeholder="薬剤名の一部を入力">
+                    </label>
+                    <div class="history-search-actions">
+                        <button type="submit" class="greenbtn">
+                            検索する
+                        </button>
+                        <button type="button" class="secondary" onclick="clearDrugSearch()">
+                            クリア
+                        </button>
+                    </div>
+                    <p id="drugSearchCount" class="history-search-count" role="status"></p>
+                </form>
 
-            <label>
-              間隔
-              <input id="moodStep" type="number" step="any" min="0.000001">
-            </label>
-          </div>
+                <h2 id="drugListHeading">
+                    現在のお薬を確認する
+                </h2>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>薬剤名</th>
+                                <th>規格</th>
+                                <th>種類</th>
+                                <th>処方数量</th>
+                                <th>処方日数</th>
+                                <th>頓服の処方数</th>
+                                <th>服薬タイミング</th>
+                                <th>処方日</th>
+                                <th>薬がなくなる日</th>
+                                <th>残数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drugRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-          <label for="moodMethod">入力方法</label>
-          <select id="moodMethod">
-            <option value="buttons">ボタン形式</option>
-            <option value="keyboard">キーボード入力</option>
-            <option value="select">プルダウン選択</option>
-            <option value="slider">スライダー形式</option>
-          </select>
+        <!-- お薬登録・編集 -->
+        <section id="drugform" class="page">
+            <h1>お薬を登録する</h1>
+            <div class="toolbar">
+                <button type="button" onclick="showPage('home')">
+                    ホーム
+                </button>
+                <button type="button" onclick="showPage('drugs')">
+                    お薬一覧へ
+                </button>
+            </div>
 
-          <p id="moodSettingsError" class="message" aria-live="polite"></p>
+            <!-- OCR読み取り -->
 
-          <div class="form-actions">
-            <button type="button" id="cancelMoodSettings" class="secondary-button">
-              キャンセル
+            <div class="panel yellow">
+                <h2>画像からお薬を読み取る</h2>
+
+                <p class="hint" style="text-align: center;">
+                    ※マイナポータルの薬の画面をスクリーンショットで撮ったものを添付してください
+                </p>
+
+                <label for="drugImage">
+                    処方薬一覧の画像を選択
+                </label>
+
+                <input type="file" id="drugImage" accept="image/*" onchange="previewImage(this)">
+                <img id="preview" alt="選択した処方薬の画像" hidden>
+                <button type="button" id="ocrButton" onclick="recognizeDrugImage()">
+                    文字を自動認識する
+                </button>
+                <p id="ocrStatus" aria-live="polite"></p>
+
+                <div id="ocrResults" hidden>
+                    <label for="ocrText">
+                        認識した文字（修正可能）
+                    </label>
+                    <textarea id="ocrText" rows="10"></textarea>
+                    <p class="hint">
+                        薬剤名と規格を含む行から薬剤ごとの情報を分割します。
+                        読み取り結果を確認してください。
+                    </p>
+                    <div class="toolbar">
+                        <button type="button" onclick="selectAllOCRDrugs()">
+                            すべて選択
+                        </button>
+                        <button type="button" onclick="clearOCRSelection()">
+                            選択解除
+                        </button>
+                    </div>
+                    <div id="ocrDrugList" class="ocr-drug-list"></div>
+                    <p id="selectedOCRCount" class="hint"></p>
+                    <div class="two">
+                        <button type="button" onclick="applyOCRToDrugForm()">
+                            1件を入力欄に反映
+                        </button>
+                        <button type="button" class="orange" onclick="prepareBatchRegistration()">
+                            処方日を入力して登録
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 手動入力・編集 -->
+            <form id="drugForm" class="panel blue" onsubmit="saveDrug(event)">
+                <input type="hidden" id="drugId">
+
+                <label for="drugName">薬剤名</label>
+                <input type="text" id="drugName" required>
+
+                <label for="strength">規格</label>
+                <input type="text" id="strength" placeholder="例：200mg" required>
+
+                <label for="drugType">薬剤の種類</label>
+                <select id="drugType" onchange="updateDrugTypeFields()">
+                    <option value="regular">定期薬</option>
+                    <option value="prn">頓服薬</option>
+                </select>
+
+                <!-- 定期薬 -->
+                <div id="regularFields" class="drug-type-fields">
+                    <h3>定期薬の情報</h3>
+
+                    <label for="total">処方数量（任意）</label>
+                    <input type="text" id="total" placeholder="例：2">
+
+                    <label for="prescriptionDays">処方日数</label>
+                    <input type="number" id="prescriptionDays" min="1" step="1" oninput="calculateInitialRemaining()">
+
+                    <label>定期薬の服薬タイミング</label>
+                    <div id="timingFields"></div>
+
+                    <button type="button" class="secondary" onclick="addTimingField()">
+                        服薬タイミングを追加
+                    </button>
+                    <p class="hint">
+                        例：朝後、夕後。複数ある場合は別々に入力します。
+                    </p>
+                </div>
+
+                <!-- 頓服薬 -->
+                <div id="prnFields" class="drug-type-fields" hidden>
+                    <h3>頓服薬の情報</h3>
+
+                    <label for="prnCount">頓服の処方数</label>
+                    <input type="number" id="prnCount" min="1" step="1" placeholder="例：14"
+                        oninput="calculateInitialRemaining()">
+
+                    <label for="prnTiming">
+                        頓服薬の服薬タイミング
+                    </label>
+                    <input type="text" id="prnTiming" placeholder="例：不穏時">
+
+                    <p class="hint">
+                        頓服薬は、処方数量・処方日数・薬がなくなる日を使用しません。
+                    </p>
+                </div>
+
+                <!-- 残数 -->
+                <div class="remaining-field">
+                    <label for="remaining">残数</label>
+                    <input type="number" id="remaining" min="0" step="1" placeholder="自動計算">
+                    <p class="hint">
+                        定期薬：処方日数 × 1日の服薬回数
+                        頓服薬：頓服の処方数
+                    </p>
+                    <button type="button" class="secondary" onclick="calculateInitialRemaining(true)">
+                        初期残数を再計算
+                    </button>
+                </div>
+
+                <label class="inline-check">
+                    <input type="checkbox" id="isPast">
+                    過去のお薬
+                </label>
+
+                <button type="submit" class="orange">
+                    処方日を入力して登録
+                </button>
+            </form>
+        </section>
+
+        <!-- 服薬セット設定 -->
+        <section id="settings" class="page">
+            <h1>服薬セットの設定</h1>
+            <button type="button" onclick="showPage('home')">
+                ホームへ
             </button>
+            <div id="settingList"></div>
+        </section>
 
-            <button type="button" id="saveMoodSettings" class="primary-button">
-              設定を保存
-            </button>
-          </div>
+        <!-- 服薬記録一覧 -->
+        <section id="history" class="page">
+            <div class="history-page-heading">
+                <h1>服薬記録一覧</h1>
+                <button type="button" onclick="showPage('home')">
+                    ホームへ
+                </button>
+            </div>
+
+            <!-- 服薬記録の検索 -->
+            <form id="historySearchForm" class="history-search-panel"
+                onsubmit="event.preventDefault(); renderHistory();">
+                <h2>検索・絞り込み</h2>
+
+                <div class="history-search-dates">
+                    <label for="historyStart">
+                        開始日
+                        <input type="date" id="historyStart">
+                    </label>
+                    <label for="historyEnd">
+                        終了日
+                        <input type="date" id="historyEnd">
+                    </label>
+                </div>
+
+                <label for="historyDrugName">
+                    薬剤名
+                    <input type="search" id="historyDrugName" placeholder="薬剤名の一部を入力">
+                </label>
+
+                <div class="history-search-actions">
+                    <button type="submit" class="greenbtn">
+                        検索する
+                    </button>
+                    <button type="button" class="secondary" onclick="clearHistorySearch()">
+                        クリア
+                    </button>
+                </div>
+                <p id="historySearchCount" class="history-search-count" role="status"></p>
+            </form>
+
+            <div id="historyList"></div>
+        </section>
+
+        <!-- メモ -->
+        <section id="memos" class="page">
+            <h1>メモ一覧</h1>
+
+            <div class="toolbar">
+                <button type="button" onclick="showPage('home')">
+                    ホーム
+                </button>
+                <button type="button" onclick="$('filter').classList.toggle('hidden')">
+                    表示期間 開／閉
+                </button>
+            </div>
+
+            <div id="filter" class="panel green hidden">
+                <label for="start">開始日</label>
+                <input type="date" id="start">
+
+                <label for="finish">終了日</label>
+                <input type="date" id="finish">
+
+                <button type="button" onclick="renderMemos()">
+                    表示
+                </button>
+                <button type="button" onclick="deleteRange()">
+                    期間内一括削除
+                </button>
+            </div>
+
+            <div id="memoGrid" class="memoGrid"></div>
+
+            <div class="panel yellow">
+                <div class="memo-heading-row">
+                    <h2>メモ</h2>
+                    <div class="memo-new-color">
+                        <label for="listMemoColor">背景色</label>
+                        <select id="listMemoColor">
+                            <option value="white">白</option>
+                            <option value="yellow">淡い黄色</option>
+                            <option value="green">淡い緑</option>
+                            <option value="blue">淡い青</option>
+                            <option value="pink">淡いピンク</option>
+                        </select>
+                    </div>
+                </div>
+
+                <textarea id="listMemo" placeholder="メモを入力"></textarea>
+                <button type="button" class="orange" onclick="addMemo('listMemo')">
+                    追加
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 共通モーダル -->
+    <div id="modal" class="overlay hidden" role="dialog" aria-modal="true">
+        <div class="dialog">
+            <h2 id="modalTitle"></h2>
+            <div id="modalBody"></div>
+            <div class="toolbar">
+                <button type="button" onclick="closeModal()">
+                    閉じる
+                </button>
+            </div>
         </div>
-
-        <!-- 気分の入力欄 -->
-        <fieldset>
-          <div class="mood-title-row">
-            <legend>気分</legend>
-
-            <button type="button" id="openMoodSettings" class="secondary-button">
-              気分の設定
-            </button>
-          </div>
-
-          <div id="moodButtons" class="mood-buttons"></div>
-
-          <p id="moodGuide" class="mood-guide"></p>
-        </fieldset>
-
-
-        <p id="formMessage" class="message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button id="cancelEditButton" class="secondary-button hidden" type="button">
-            編集をキャンセル
-          </button>
-          <button id="saveButton" class="primary-button" type="button">
-            記録する
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 予定入力画面 -->
-    <section id="planPage" class="page">
-      <div class="card form-card">
-        <h2>予定を登録</h2>
-
-        <label for="planActivity">予定</label>
-        <textarea id="planActivity" rows="3" maxlength="300" placeholder="例：散歩をする"></textarea>
-
-        <label for="planDate">開始日・予定日</label>
-        <input id="planDate" type="date">
-
-        <label for="planTime">時刻</label>
-        <input id="planTime" type="text" inputmode="numeric" pattern="[0-9:]*" maxlength="5" placeholder="例：800"
-          autocomplete="off">
-
-        <label for="planRepeat">繰り返し</label>
-        <select id="planRepeat">
-          <option value="once">その日限り</option>
-          <option value="daily">毎日</option>
-          <option value="weekly">毎週</option>
-        </select>
-
-        <p class="mood-guide">
-          毎週は開始日と同じ曜日に表示します。
-        </p>
-
-        <p id="planMessage" class="message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button id="cancelPlanButton" class="secondary-button hidden" type="button">
-            編集をキャンセル
-          </button>
-          <button id="savePlanButton" class="primary-button" type="button">
-            予定を登録
-          </button>
-        </div>
-
-        <h3>未完了の予定</h3>
-        <div id="planList"></div>
-      </div>
-    </section>
-
-    <!-- 時系列画面 -->
-    <section id="timelinePage" class="page">
-      <div class="section-heading">
-        <h2>時系列で見る</h2>
-        <span id="recordCount" class="count-badge">0件</span>
-      </div>
-
-      <div class="date-filter">
-        <div class="filter-date-field">
-          <label for="timelineDisplayDate">表示日</label>
-          <input id="timelineDisplayDate" type="date">
-        </div>
-
-        <div class="filter-actions">
-          <button id="timelineResetButton" class="secondary-button" type="button">
-            全て表示
-          </button>
-        </div>
-
-        <p id="timelineFilterMessage" class="filter-message" aria-live="polite"></p>
-      </div>
-
-      <!-- 表示日ごとのメモ -->
-      <div id="dailyMemoCard" class="daily-memo-card">
-        <label for="dailyMemo">この日のメモ</label>
-        <textarea id="dailyMemo" rows="3" maxlength="3000" placeholder="表示日を選択すると、その日のメモを入力できます" disabled></textarea>
-
-        <div class="daily-memo-actions">
-          <p id="dailyMemoMessage" aria-live="polite"></p>
-          <button id="saveDailyMemoButton" class="primary-button" type="button" disabled>
-            メモを保存
-          </button>
-        </div>
-      </div>
-
-      <div id="timeline" class="timeline"></div>
-
-      <!-- 予定完了時の入力欄 -->
-      <div id="completePanel" class="card hidden">
-        <h3>予定を完了</h3>
-        <p id="completeDateLabel"></p>
-
-        <p id="completeActivity" class="complete-activity"></p>
-
-        <label for="completeTime">完了時刻</label>
-        <div class="time-row">
-          <input id="completeTime" type="text" inputmode="numeric" placeholder="例：14:30" maxlength="5">
-          <button id="completeNowButton" class="sub-button" type="button">
-            現在時刻
-          </button>
-        </div>
-
-        <label id="completeMoodLabel">気分</label>
-
-        <div id="completeMoodContainer" class="mood-buttons"></div>
-
-        <p id="completeMoodGuide" class="mood-guide"></p>
-
-
-        <p id="completeMessage" class="message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button id="cancelCompleteButton" class="secondary-button" type="button">
-            キャンセル
-          </button>
-          <button id="finishPlanButton" class="primary-button" type="button">
-            完了
-          </button>
-        </div>
-      </div>
-
-      <button id="clearAllButton" class="danger-button" type="button">
-        すべての記録を削除
-      </button>
-    </section>
-
-    <!-- グラフ画面 -->
-    <section id="graphPage" class="page">
-      <div class="card graph-card">
-        <h2>気分の推移</h2>
-
-        <p id="graphNote" class="graph-note">
-          横軸：時刻　縦軸：気分
-        </p>
-
-        <div class="date-filter">
-          <div class="filter-date-field">
-            <label for="graphDisplayDate">表示日</label>
-            <input id="graphDisplayDate" type="date">
-          </div>
-
-          <div class="filter-actions">
-            <button id="graphResetButton" class="secondary-button" type="button">
-              全て表示
-            </button>
-          </div>
-
-          <p id="graphFilterMessage" class="filter-message" aria-live="polite"></p>
-        </div>
-
-
-        <label for="moodGraphMode">
-          気分のグラフ表示
-        </label>
-
-        <select id="moodGraphMode">
-          <option value="raw">元の数値</option>
-          <option value="normalized">0〜100％換算</option>
-        </select>
-
-        <p class="mood-guide">
-          換算表示は各記録時点の設定範囲を基準にします。
-        </p>
-
-
-        <div class="canvas-wrap">
-          <canvas id="moodChart" aria-label="時刻ごとの気分グラフ"></canvas>
-          <p id="graphEmpty" class="empty-message">
-            記録するとグラフが表示されます。
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 検索画面 -->
-    <section id="searchPage" class="page">
-      <div class="section-heading">
-        <h2>記録を検索</h2>
-        <span id="searchResultCount" class="count-badge">
-          0件
-        </span>
-      </div>
-
-      <div class="search-filter-card">
-        <div class="search-period">
-          <div class="filter-date-field">
-            <label for="searchStartDate">開始日</label>
-            <input id="searchStartDate" type="date">
-          </div>
-          <div class="filter-date-field">
-            <label for="searchEndDate">終了日</label>
-            <input id="searchEndDate" type="date">
-          </div>
-        </div>
-
-        <label for="searchKeyword">検索ワード</label>
-        <input id="searchKeyword" type="search" placeholder="例：散歩">
-
-        <label for="searchMood">
-          気分（数値で完全一致）
-        </label>
-
-        <input id="searchMood" type="number" step="any" placeholder="指定なし（過去の値も検索できます）">
-
-        <div class="search-actions">
-          <button id="searchButton" class="primary-button" type="button">
-            検索
-          </button>
-          <button id="searchClearButton" class="secondary-button" type="button">
-            クリア
-          </button>
-        </div>
-
-        <p id="searchMessage" class="filter-message" aria-live="polite"></p>
-      </div>
-
-      <div id="searchResults" class="search-results">
-        <p class="empty-message">
-          期間と検索条件を入力してください。
-        </p>
-      </div>
-    </section>
-
-    <!-- 定期的な活動 -->
-    <div id="routineModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
-      aria-labelledby="routineModalTitle" aria-hidden="true">
-      <div class="routine-modal">
-        <div class="routine-modal-header">
-          <h2 id="routineModalTitle">定期的な活動</h2>
-          <button id="closeRoutineButton" class="modal-close-button" type="button" aria-label="閉じる">
-            ×
-          </button>
-        </div>
-
-        <p class="routine-help">
-          活動を押すと「活動内容」に入力されます。
-        </p>
-
-        <div id="routineList" class="routine-list"></div>
-
-        <button id="toggleRoutineSettingsButton" class="secondary-button routine-settings-button" type="button">
-          設定
-        </button>
-
-        <div id="routineSettings" class="routine-settings hidden">
-          <h3>よくする活動を編集</h3>
-
-          <div class="routine-add-row">
-            <input id="newRoutineInput" type="text" maxlength="100" placeholder="例：散歩を30分した">
-            <button id="addRoutineButton" class="primary-button" type="button">
-              追加
-            </button>
-          </div>
-
-          <div id="routineEditList" class="routine-edit-list"></div>
-        </div>
-      </div>
     </div>
-  </main>
 
+    <!-- OCRライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-  <!-- 共通設定画面 -->
-  <div id="appSettingsDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true"
-    aria-labelledby="appSettingsTitle" aria-hidden="true">
+    
+<!-- ほかのアプリを探す -->
+<div id="otherAppsSection">
+  <button id="openOtherAppsButton" type="button">
+    ▦ ほかのアプリを探す
+  </button>
+</div>
 
-    <div class="transfer-dialog-card app-settings-card">
+<!-- 共通アプリメニュー -->
+<script src="https://kotom0919.github.io/App-menu/app-menu.js?v=3"></script>
 
-      <button id="closeAppSettingsButton" class="transfer-close-button" type="button" aria-label="閉じる">×</button>
-
-      <h2 id="appSettingsTitle">設定</h2>
-
-      <div class="app-settings-list">
-
-        <button id="settingsTransferButton" class="app-settings-item" type="button">
-          <span class="app-settings-symbol">⇄</span>
-          <span>
-            データの移行
-            <small>データを書き出す・読み込む</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </button>
-
-        <button id="settingsShareButton" class="app-settings-item" type="button">
-          <span class="app-settings-symbol">↗</span>
-          <span>
-            アプリをシェア
-            <small>共有・URLコピー・QRコード</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </button>
-
-        <button id="settingsOtherAppsButton" class="app-settings-item" type="button">
-          <span class="app-settings-symbol">▦</span>
-          <span>
-            ほかのアプリを探す
-            <small>アプリ一覧を表示</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </button>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- アプリ共有画面 -->
-  <div id="appShareDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="appShareTitle"
-    aria-hidden="true">
-
-    <div class="transfer-dialog-card app-settings-card">
-
-      <button id="closeAppShareButton" class="transfer-close-button" type="button" aria-label="閉じる">×</button>
-
-      <h2 id="appShareTitle">アプリをシェア</h2>
-
-      <p>活動記録表のURLを共有できます。</p>
-
-      <input id="appShareUrl" type="text" readonly aria-label="共有URL">
-
-      <div class="form-actions">
-        <button id="copyAppShareButton" type="button" class="secondary-button">
-          URLをコピー
-        </button>
-
-        <button id="nativeAppShareButton" type="button" class="primary-button">
-          共有する
-        </button>
-      </div>
-
-      <div class="app-share-qr">
-        <img id="appShareQr" alt="活動記録表のQRコード">
-      </div>
-
-      <p id="appShareMessage" class="message" aria-live="polite"></p>
-
-    </div>
-  </div>
-
-  <!-- 従来のデータ移行処理を呼び出すためのボタン -->
-  <button id="openTransferDialogButton" type="button" class="hidden" tabindex="-1" aria-hidden="true"></button>
-
-
-  <!-- データ移行 -->
-  <div id="transferDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true"
-    aria-labelledby="transferDialogTitle" aria-hidden="true">
-    <div class="transfer-dialog-card">
-      <button id="closeTransferDialogButton" class="transfer-close-button" type="button" aria-label="閉じる">
-        ×
-      </button>
-      <h2 id="transferDialogTitle">データの移行</h2>
-      <p>
-        この端末でデータを書き出し、移行先でファイルを読み込んでください。
-        活動記録・予定・定期的な活動・日別メモをまとめて移します。
-      </p>
-
-      <div class="form-actions">
-        <button id="exportDataButton" class="secondary-button" type="button">
-          データを書き出す
-        </button>
-        <button id="importDataButton" class="primary-button" type="button">
-          データを読み込む
-        </button>
-      </div>
-
-      <input id="importDataFile" type="file" accept=".json,application/json" class="hidden"
-        aria-label="活動記録のバックアップファイル">
-
-      <p id="transferMessage" class="message" aria-live="polite"></p>
-    </div>
-  </div>
-
-  <!-- 印刷する期間の選択画面 -->
-  <div id="printDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="printDialogTitle"
-    aria-hidden="true">
-    <div class="print-dialog-card">
-      <h2 id="printDialogTitle">印刷する期間</h2>
-
-      <label for="printStartDate">開始日</label>
-      <input id="printStartDate" type="date">
-
-      <label for="printEndDate">終了日</label>
-      <input id="printEndDate" type="date">
-
-      <p id="printDialogMessage" class="filter-message" aria-live="polite"></p>
-
-      <div class="form-actions">
-        <button id="cancelPrintButton" class="secondary-button" type="button">
-          キャンセル
-        </button>
-        <button id="executePrintButton" class="primary-button" type="button">
-          印刷
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 印刷専用 -->
-  <div id="dailyPrintRoot" aria-hidden="true"></div>
-
-  <!-- 下部メニュー -->
-  <nav class="bottom-nav">
-    <button type="button" class="nav-button active" data-page="inputPage">
-      <span>✏️</span>
-      記録する
-    </button>
-
-    <button type="button" class="nav-button" data-page="planPage">
-      <span>📅</span>
-      予定
-    </button>
-
-    <button type="button" class="nav-button" data-page="timelinePage">
-      <span>🕒</span>
-      時系列
-    </button>
-
-    <button type="button" class="nav-button" data-page="graphPage">
-      <span>📈</span>
-      グラフ
-    </button>
-
-    <button type="button" class="nav-button" data-page="searchPage">
-      <span>🔍</span>
-      検索
-    </button>
-  </nav>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <script src="https://kotom0919.github.io/App-menu/app-menu.js?v=2"></script>
-
-  <script src="script.js?v=33"></script>
 </body>
 
 </html>

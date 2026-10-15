@@ -1,2346 +1,2885 @@
+
+/* 服薬管理アプリ スタイルシート（整理版）
+   元ファイル: style(20261011-083412).css
+   既存のCSS優先順位とメディアクエリを維持するため、
+   上書きルールは削除せず保持しています。
+*/
+
+
+/* ========================================
+   基本設定
+======================================== */
+
 :root {
-  --main: #58a98a;
-  --main-dark: #397c65;
-  --main-light: #e9f5f0;
-  --text: #26332e;
-  --muted: #68756f;
-  --border: #d6e1dc;
-  --danger: #c64b4b;
-  --shadow: 0 5px 18px rgba(45, 85, 69, 0.09);
+  --navy: #192e52;
+  --green: #e2efd9;
+  --green-dark: #73ad43;
+  --blue: #deebf8;
+  --blue-dark: #4778c7;
+  --yellow: #fff2cc;
+  --orange: #ffc000;
+  --line: #203457;
+  --white: #ffffff;
+  --gray: #f1f3f6;
+  --red: #b83b3b;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  min-width: 320px;
-  color: var(--text);
-  background: #f4f8f6;
+  padding: 0;
   font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Noto Sans JP",
+    "Yu Gothic",
+    "Hiragino Kaku Gothic ProN",
+    Meiryo,
     sans-serif;
+  background: #ffffff;
+  color: #111111;
+  line-height: 1.5;
 }
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
 
 button {
   cursor: pointer;
+  border: 1px solid var(--navy);
+  background: #ffffff;
+  color: #111111;
+  padding: 12px 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: background 0.15s, opacity 0.15s;
 }
 
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding: 15px 20px;
-  color: white;
-  text-align: center;
-  background: var(--main);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+button:hover {
+  background: #f3f6fa;
 }
 
-.app-header h1 {
-  margin: 0;
-  font-size: 1.35rem;
+button:active {
+  opacity: 0.7;
 }
 
-main {
-  width: min(760px, 100%);
-  min-height: calc(100vh - 130px);
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.orange {
+  background: var(--orange);
+}
+
+button.greenbtn {
+  background: #abd28c;
+  border: none;
+}
+
+button.secondary {
+  background: #e8edf3;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111111;
+  padding: 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  accent-color: var(--green-dark);
+}
+
+input[type="file"] {
+  width: 100%;
+}
+
+input[readonly] {
+  background: #f0f3f6;
+  color: #444444;
+}
+
+textarea {
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+}
+
+label {
+  overflow-wrap: anywhere;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+
+/* ========================================
+   ページ切り替え
+======================================== */
+
+#app {
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 22px 16px 100px;
+  padding: 15px;
 }
 
 .page {
   display: none;
+  min-height: 100vh;
 }
 
 .page.active {
   display: block;
-  animation: fade 0.18s ease;
 }
 
-@keyframes fade {
-  from {
-    opacity: 0.35;
-  }
-
-  to {
-    opacity: 1;
-  }
+.page h1 {
+  color: var(--blue-dark);
+  text-align: center;
+  font-size: clamp(28px, 5vw, 48px);
+  margin: 10px 0 25px;
+  text-shadow: 2px 2px #d4e4f7;
 }
 
-.card {
-  padding: 22px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-}
-
-h2 {
+.page h2 {
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 500;
+  text-align: center;
   margin: 0 0 18px;
-  font-size: 1.25rem;
 }
 
-label,
-legend {
-  display: block;
-  margin: 15px 0 7px;
-  font-weight: 700;
+.page h3 {
+  margin: 10px 0;
 }
 
-input,
-textarea {
-  width: 100%;
+
+/* ========================================
+   ホーム画面
+======================================== */
+
+#home header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+#clock {
+  color: #64a0d7;
+  font-weight: bold;
+  font-size: clamp(28px, 6vw, 52px);
+  white-space: pre-line;
+  text-shadow: 2px 2px #dceafa;
+  line-height: 1.5;
+}
+
+
+/* ========================================
+   共通パネル
+======================================== */
+
+.panel {
+  padding: 25px;
+  margin: 18px 0;
+  border-radius: 35px;
+}
+
+.panel.green {
+  background: var(--green);
+}
+
+.panel.blue {
+  background: var(--blue);
+}
+
+.panel.yellow {
+  background: var(--yellow);
+  border: 1px solid var(--navy);
+}
+
+.green h2 {
+
+  color: var(--green-dark);
+}
+
+.blue h2 {
+  color: #63a2db;
+}
+
+.yellow h2 {
+  color: #f28a32;
+}
+
+
+/* ========================================
+   ボタン配置
+======================================== */
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.two button {
   min-width: 0;
-  padding: 12px;
-  color: var(--text);
-  background: white;
-  border: 1.5px solid #b9c9c2;
-  border-radius: 9px;
-  outline: none;
+  min-height: 60px;
 }
 
-input:focus,
-textarea:focus {
-  border-color: var(--main);
-  box-shadow:
-    0 0 0 3px rgba(88, 169, 138, 0.15);
+.wide {
+  display: block;
+  width: min(100%, 360px);
+  margin: 20px auto 0;
 }
 
-textarea {
-  resize: vertical;
-}
-
-.time-row {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    auto;
-  gap: 8px;
-}
-
-/* 活動内容と定期的な活動ボタン */
-
-.activity-label-row {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.activity-label-row label {
-  margin: 0 0 7px;
-}
-
-.routine-open-button {
-  margin-bottom: 7px;
-  padding: 6px 10px;
-  color: var(--main-dark);
-  background: var(--main-light);
-  border: 1px solid var(--main);
-  border-radius: 8px;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
-/* 定期的な活動の画面 */
-
-.modal-open {
-  overflow: hidden;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(22, 40, 33, 0.48);
-}
-
-.routine-modal {
-  width: min(520px, 100%);
-  max-height:
-    min(720px, calc(100vh - 32px));
-  padding: 20px;
-  overflow-y: auto;
-  background: white;
-  border-radius: 16px;
-  box-shadow:
-    0 16px 45px rgba(0, 0, 0, 0.2);
-}
-
-.routine-modal-header {
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.routine-modal-header h2 {
-  margin: 0;
-}
-
-.modal-close-button {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  color: var(--muted);
-  background: #f3f6f4;
-  border: 0;
-  border-radius: 50%;
-  font-size: 1.6rem;
-  line-height: 1;
-}
-
-.routine-help {
-  margin: 10px 0 14px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.routine-list {
-  display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.routine-choice {
-  min-height: 48px;
-  padding: 9px 10px;
-  overflow-wrap: anywhere;
-  color: var(--main-dark);
-  background: var(--main-light);
-  border: 1px solid var(--main);
-  border-radius: 9px;
-  font-weight: 700;
-}
-
-.routine-empty {
-  grid-column: 1 / -1;
-  margin: 8px 0;
-  padding: 18px 8px;
-  color: var(--muted);
-  text-align: center;
-}
-
-.routine-settings-button {
-  width: 100%;
-  margin-top: 16px;
-}
-
-.routine-settings {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.routine-settings h3 {
-  margin: 0 0 10px;
-  font-size: 1rem;
-}
-
-.routine-add-row,
-.routine-edit-row {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    auto;
-  gap: 7px;
-}
-
-.routine-add-row button {
-  min-width: 72px;
-}
-
-.routine-edit-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.routine-edit-row button {
-  padding: 8px 11px;
-  color: var(--danger);
-  background: white;
-  border: 1px solid #dda7a7;
-  border-radius: 8px;
-  font-weight: 700;
-}
-
-/* 気分 */
-
-fieldset {
-  margin: 18px 0 0;
-  padding: 0;
-  border: 0;
-}
-
-fieldset legend {
-  padding: 0;
-}
-
-.mood-buttons {
-  display: grid;
-  grid-template-columns:
-    repeat(7, 1fr);
-  gap: 7px;
-}
-
-.mood-buttons button {
-  min-height: 46px;
-  padding: 6px 2px;
-  color: var(--text);
-  background: #f4f6f5;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  font-weight: 700;
-}
-
-.mood-buttons button.selected {
-  color: white;
-  background: var(--main);
-  border-color: var(--main-dark);
-  transform: translateY(-2px);
-}
-
-.mood-guide {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-/* 共通ボタン */
-
-.primary-button,
-.secondary-button,
-.sub-button,
-.danger-button {
-  min-height: 46px;
-  padding: 10px 16px;
-  border-radius: 9px;
-  font-weight: 700;
-}
-
-.primary-button {
-  flex: 1;
-  color: white;
-  background: var(--main);
-  border: 0;
-}
-
-.primary-button:hover {
-  background: var(--main-dark);
-}
-
-.secondary-button,
-.sub-button {
-  color: var(--main-dark);
-  background: var(--main-light);
-  border: 1px solid var(--main);
-}
-
-.form-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.message {
-  min-height: 1.4em;
-  margin: 12px 0 -8px;
-  color: var(--danger);
-  font-size: 0.9rem;
-}
-
-.message.success {
-  color: var(--main-dark);
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* 時系列 */
-
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.section-heading h2 {
-  margin: 0;
-}
-
-.count-badge {
-  padding: 5px 10px;
-  color: var(--main-dark);
-  background: var(--main-light);
-  border-radius: 999px;
-  font-size: 0.85rem;
-}
-
-.timeline {
-  position: relative;
-  padding-left: 25px;
-}
-
-.timeline-print-pages {
-  display: none;
-}
-
-.timeline::before {
-  content: "";
-  position: absolute;
-  top: 9px;
-  bottom: 9px;
-  left: 8px;
-  width: 2px;
-  background: #abd3c3;
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 13px;
-  padding: 16px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-}
-
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  top: 20px;
-  left: -23px;
-  width: 11px;
-  height: 11px;
-  background: var(--main);
-  border: 3px solid #f4f8f6;
-  border-radius: 50%;
-}
-
-.record-head {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.record-date {
-  color: var(--main-dark);
-  font-weight: 700;
-}
-
-.mood-badge {
-  flex: 0 0 auto;
-  padding: 5px 9px;
-  color: white;
-  border-radius: 999px;
-  font-size: 0.84rem;
-  font-weight: 700;
-}
-
-.activity-text {
-  margin: 12px 0;
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.record-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 7px;
-}
-
-.record-actions button {
-  padding: 6px 11px;
-  color: var(--main-dark);
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-}
-
-.record-actions .delete-button {
-  color: var(--danger);
-}
-
-.empty-message {
-  padding: 35px 12px;
-  color: var(--muted);
-  text-align: center;
-}
-
-.danger-button {
-  display: block;
-  margin: 25px auto 0;
-  color: var(--danger);
-  background: white;
-  border: 1px solid #dda7a7;
-}
-
-/* グラフ */
-
-.graph-card {
-  padding: 18px 12px;
-}
-
-.graph-card h2 {
-  margin-left: 8px;
-}
-
-.graph-note {
-  margin: -10px 8px 15px;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.canvas-wrap {
-  position: relative;
-  width: 100%;
-  min-height: 360px;
-}
-
-#moodChart {
-  display: block;
-  width: 100%;
-  height: 360px;
-}
-
-/* 下部メニュー */
-
-.bottom-nav {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 20;
-  display: grid;
-  grid-template-columns:
-    repeat(5, minmax(0, 1fr));
-  background: white;
-  border-top: 1px solid var(--border);
-  box-shadow:
-    0 -3px 12px rgba(0, 0, 0, 0.08);
-}
-
-.nav-button {
-  min-height: 67px;
-  color: var(--muted);
-  background: white;
-  border: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.nav-button span {
-  display: block;
-  margin-bottom: 2px;
-  font-size: 1.25rem;
-}
-
-.nav-button.active {
-  color: var(--main-dark);
-  background: var(--main-light);
-}
-
-/* 印刷ボタン */
-
-.print-button {
-  min-height: 46px;
-  padding: 10px 16px;
-  color: white;
-  background: #667b72;
-  border: 1px solid #667b72;
-  border-radius: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.print-button:hover {
-  background: #50635b;
-}
-
-/* 印刷時の表示 */
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 8mm;
-  }
-
-  body.print-daily {
-    margin: 0;
-    min-width: 0;
-    background: white;
-  }
-
-  body.print-daily > .app-header,
-  body.print-daily > main,
-  body.print-daily > .bottom-nav,
-  body.print-daily > #printDialog {
-    display: none !important;
-  }
-
-  body.print-daily > #dailyPrintRoot {
-    display: block !important;
-  }
-
-  .daily-print-page {
-    display: grid;
-    grid-template-rows: 9mm 60mm 164mm 25mm;
-    gap: 3mm;
-    width: 194mm;
-    height: 268mm;
-    margin: 0 auto;
-    overflow: hidden;
-    color: #151515;
-    background: white;
-    break-after: page;
-    page-break-after: always;
-    box-sizing: border-box;
-  }
-
-  .daily-print-page:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  .daily-print-page h1 {
-    margin: 0;
-    text-align: center;
-    font-size: 15pt;
-    font-weight: 500;
-    line-height: 9mm;
-  }
-
-  .daily-print-graph {
-    border: 1px solid #777;
-    padding: 2mm 4mm;
-    overflow: hidden;
-  }
-
-  .daily-print-graph h2 {
-    margin: 0;
-    text-align: center;
-    font-size: 11pt;
-    line-height: 5mm;
-  }
-
-  .daily-print-graph svg {
-    display: block;
-    width: 100%;
-    height: 49mm;
-  }
-
-  .daily-print-graph svg text {
-    fill: #333;
-    font-size: 12px;
-  }
-
-  .daily-print-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6mm;
-    min-height: 0;
-  }
-
-  .daily-print-column {
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid #777;
-    padding: 2mm 3mm;
-  }
-
-  .daily-print-column:first-child {
-    border-right: 1px solid #777;
-  }
-
-  .daily-print-list {
-    font-size: var(--daily-record-font, 8pt);
-    line-height: 1.15;
-  }
-
-  .daily-print-record {
-    box-sizing: border-box;
-    min-height: 7.5mm;
-    padding: 0.5mm 0;
-    border-bottom: 1px solid #ccc;
-    break-inside: avoid;
-  }
-
-  .daily-print-record-heading {
-    display: flex;
-    justify-content: space-between;
-    gap: 2mm;
-  }
-
-  .daily-print-record p {
-    margin: 1mm 0 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-
-  .daily-print-empty {
-    color: #555;
-    text-align: center;
-  }
-
-  .daily-print-memo {
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid #777;
-    padding: 2mm 3mm;
-  }
-
-  .daily-print-memo h2 {
-    margin: 0 0 1mm;
-    text-align: center;
-    font-size: 11pt;
-  }
-
-  .daily-print-memo p {
-    margin: 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-size: 8pt;
-    line-height: 1.2;
-  }
-}
-
-/* 日付フィルター */
-
-.date-filter {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin-bottom: 18px;
-  padding: 14px;
-  overflow: hidden;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-sizing: border-box;
-}
-
-.filter-date-field {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.filter-date-field label {
-  margin: 14px 0 6px;
-}
-
-.filter-actions {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  margin-top: 16px;
-  gap: 7px;
-}
-
-.filter-actions button {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 10px 4px;
-  white-space: nowrap;
-}
-
-.filter-message {
-  margin: 8px 0 0;
-  color: var(--danger);
-  text-align: center;
-}
-
-/* 日付欄共通 */
-
-input[type="date"] {
-  display: block !important;
-  width: calc(100% - 6px) !important;
-  max-width: calc(100% - 6px) !important;
-  min-width: 0 !important;
-  margin-right: auto !important;
-  margin-left: auto !important;
-  padding: 10px !important;
-  box-sizing: border-box !important;
-  text-align: center !important;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-input[type="date"]::-webkit-date-and-time-value {
-  width: 100% !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: center !important;
-}
-
-/* 活動内容の検索欄 */
-
-.activity-search {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin-bottom: 18px;
-  padding: 14px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-sizing: border-box;
-}
-
-.activity-search label {
-  margin: 0 0 7px;
-}
-
-.search-row {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    auto
-    auto;
-  gap: 7px;
-}
-
-.search-row input {
-  min-width: 0;
-}
-
-.search-row button {
-  min-width: 72px;
-}
-
-/* スマホ表示 */
-
-@media screen and (max-width: 900px) {
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: hidden;
-  }
-
-  main {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-  }
-
-  .page,
-  .card,
-  .date-filter,
-  .filter-date-field {
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-
-  .date-filter {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  input[type="date"] {
-    width: calc(100% - 6px) !important;
-    max-width: calc(100% - 6px) !important;
-    min-width: 0 !important;
-  }
-}
-
-@media screen and (max-width: 520px) {
-  main {
-    padding: 14px 10px 92px;
-  }
-
-  .card {
-    padding: 17px 13px;
-    border-radius: 12px;
-  }
-
-  .mood-buttons {
-    gap: 4px;
-  }
-
-  .mood-buttons button {
-    min-height: 43px;
-    font-size: 0.86rem;
-  }
-
-  .time-row {
-    grid-template-columns:
-      minmax(0, 1fr)
-      96px;
-  }
-
-  .sub-button {
-    padding: 8px;
-    font-size: 0.86rem;
-  }
-
-  .canvas-wrap,
-  #moodChart {
-    min-height: 330px;
-    height: 330px;
-  }
-
-  .routine-modal {
-    padding: 16px 12px;
-  }
-
-  .routine-list {
-    grid-template-columns: 1fr;
-  }
-
-  .routine-open-button {
-    padding: 6px 8px;
-    font-size: 0.8rem;
-  }
-
-  .activity-search {
-    padding: 11px 8px;
-  }
-
-  .search-row {
-    grid-template-columns:
-      minmax(0, 1fr)
-      62px
-      62px;
-    gap: 5px;
-  }
-
-  .search-row button {
-    min-width: 0;
-    padding: 8px 4px;
-  }
-}
-
-/* スマホ版：時系列の1件分を約75％に縮小 */
-
-@media screen and (max-width: 520px) {
-  .timeline {
-    padding-left: 21px;
-  }
-
-  .timeline::before {
-    left: 6px;
-  }
-
-  .timeline-item {
-    margin-bottom: 8px;
-    padding: 10px 11px;
-    border-radius: 9px;
-  }
-
-  .timeline-item::before {
-    top: 14px;
-    left: -19px;
-    width: 9px;
-    height: 9px;
-    border-width: 2px;
-  }
-
-  .record-head {
-    gap: 5px;
-  }
-
-  .record-date {
-    font-size: 0.78rem;
-    line-height: 1.2;
-  }
-
-  .mood-badge {
-    padding: 3px 7px;
-    font-size: 0.72rem;
-  }
-
-  .activity-text {
-    margin: 6px 0;
-    font-size: 0.86rem;
-    line-height: 1.35;
-  }
-
-  .record-actions {
-    gap: 5px;
-  }
-
-  .record-actions button {
-    min-height: 30px;
-    padding: 3px 9px;
-    font-size: 0.76rem;
-  }
-}
-
-/* 印刷時に活動内容をページ分割させない */
-
-@media print {
-  .timeline-print-flow {
-    column-count: 2 !important;
-    column-gap: 3mm !important;
-    column-fill: auto !important;
-  }
-
-  .timeline-print-item {
-    display: inline-block !important;
-    width: 100% !important;
-    height: auto !important;
-    margin: 0 0 1.5mm !important;
-    padding: 1.5mm 1.8mm !important;
-    overflow: visible !important;
-    vertical-align: top !important;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-
-  .timeline-print-record-head,
-  .timeline-print-item time,
-  .timeline-print-item span,
-  .timeline-print-item p {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-
-  .timeline-print-item p {
-    display: block !important;
-    height: auto !important;
-    max-height: none !important;
-    margin: 1mm 0 0 !important;
-    overflow: visible !important;
-    white-space: pre-wrap !important;
-    -webkit-line-clamp: unset !important;
-    -webkit-box-orient: initial !important;
-  }
-
-  .timeline-print-date-group {
-    display: inline-block !important;
-    width: 100% !important;
-    margin: 0 0 2mm !important;
-    padding: 0 !important;
-    vertical-align: top !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-
-  .timeline-print-date-heading {
-    margin: 0 0 1mm !important;
-    padding: 1mm 1.5mm !important;
-    color: #222 !important;
-    background: #edf3f0 !important;
-    border-left: 1mm solid #58a98a !important;
-    font-size: 8pt !important;
-    font-weight: 700 !important;
-    line-height: 1.2 !important;
-    break-after: avoid !important;
-    page-break-after: avoid !important;
-  }
-
-  .timeline-print-date-records {
-    display: block !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-
-  .timeline-print-date-records
-  .timeline-print-item:last-child {
-    margin-bottom: 0 !important;
-  }
-}
-
-/* スマホ印刷もA4・左右2段組みに固定 */
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 7mm;
-  }
-
-  .timeline-print-document {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  .timeline-print-flow {
-    display: block !important;
-    width: 100% !important;
-    column-count: 2 !important;
-    -webkit-column-count: 2 !important;
-    column-gap: 3mm !important;
-    -webkit-column-gap: 3mm !important;
-    column-fill: auto !important;
-    -webkit-column-fill: auto !important;
-    column-rule: 0.2mm solid #cccccc !important;
-    -webkit-column-rule: 0.2mm solid #cccccc !important;
-  }
-
-  .timeline-print-date-group {
-    display: inline-block !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    vertical-align: top !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-
-  .timeline-print-item {
-    display: inline-block !important;
-    width: 100% !important;
-    height: auto !important;
-    box-sizing: border-box !important;
-    vertical-align: top !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
-  }
-}
-
-/* 時系列印刷 iPhone / Safari対応 2列固定版 */
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 7mm;
-  }
-
-  .timeline-print-page {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    overflow: visible;
-    box-sizing: border-box;
-    break-after: page;
-    page-break-after: always;
-  }
-
-  .timeline-print-page:last-child {
-    break-after: auto !important;
-    page-break-after: auto !important;
-  }
-
-  .timeline-print-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 7mm;
-    margin: 0 0 2mm;
-    border-bottom: 0.3mm solid #777;
-    box-sizing: border-box;
-  }
-
-  .timeline-print-header h2 {
-    margin: 0;
-    font-size: 11pt;
-  }
-
-  .timeline-print-header span {
-    font-size: 7.5pt;
-  }
-
-  .timeline-print-columns {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: flex-start;
-    width: 100% !important;
-    gap: 3mm;
-    box-sizing: border-box;
-  }
-
-  .timeline-print-column {
-    display: block !important;
-    flex: 0 0 calc(50% - 1.5mm) !important;
-    width: calc(50% - 1.5mm) !important;
-    max-width: calc(50% - 1.5mm) !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .timeline-print-right {
-    padding-left: 3mm;
-    border-left: 0.2mm solid #ddd;
-  }
-
-  .timeline-print-date-group {
-    display: block;
-    width: 100%;
-    margin: 0 0 2mm;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    box-sizing: border-box;
-  }
-
-  .timeline-print-date-heading {
-    width: 100%;
-    margin: 0 0 1mm;
-    padding: 1.2mm 1.8mm;
-    background: #edf4f1;
-    border-left: 1mm solid #58a98a;
-    font-size: 8pt;
-    line-height: 1.2;
-    box-sizing: border-box;
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  .timeline-print-date-records {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .timeline-print-item {
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 0 1mm;
-    padding: 1.3mm 1.7mm;
-    overflow: visible !important;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    box-sizing: border-box;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid;
-  }
-
-  .timeline-print-record-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1mm;
-    font-size: 6.5pt;
-    font-weight: 700;
-    line-height: 1.1;
-  }
-
-  .timeline-print-record-head span {
-    flex: 0 0 auto;
-  }
-
-  .timeline-print-item p {
-    display: block !important;
-    margin: 0.7mm 0 0;
-    overflow: visible !important;
-    font-size: 7pt;
-    line-height: 1.15;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    -webkit-line-clamp: unset !important;
-    -webkit-box-orient: initial !important;
-  }
-
-  .timeline-print-empty {
-    margin: 20mm 0;
-    color: #555;
-    text-align: center;
-    font-size: 10pt;
-  }
-}
-
-@media screen and (max-width: 520px) {
-  .daily-memo-card,
-  .search-filter-card {
-    padding: 11px 8px;
-  }
-
-  .search-period {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .daily-memo-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .daily-memo-actions button {
-    width: 100%;
-  }
-
-  .nav-button {
-    padding-right: 2px;
-    padding-left: 2px;
-    font-size: 0.72rem;
-  }
-}
-
-@media print {
-  .daily-memo-card,
-  #searchPage {
-    display: none !important;
-  }
-
-  .timeline-print-memos {
-    display: block;
-    margin-top: 4mm;
-    padding-top: 3mm;
-    border-top: 0.3mm solid #777;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .timeline-print-memos h2 {
-    margin: 0 0 2mm;
-    font-size: 10pt;
-  }
-
-  .timeline-print-memo {
-    margin-bottom: 2mm;
-    padding: 2mm;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .timeline-print-memo h3 {
-    margin: 0 0 1mm;
-    font-size: 7.5pt;
-  }
-
-  .timeline-print-memo p {
-    margin: 0;
-    font-size: 7.5pt;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-  }
-}
-
-/* 日付ごとのメモ */
-
-.daily-memo-card {
-  width: 100%;
-  margin-bottom: 18px;
-  padding: 14px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-sizing: border-box;
-}
-
-.daily-memo-card label {
-  margin: 0 0 7px;
-}
-
-#dailyMemo {
-  width: 100%;
-  min-height: 88px;
-  max-height: none;
-  overflow-y: hidden;
-  resize: none;
-  box-sizing: border-box;
-}
-
-#dailyMemo:disabled {
-  color: var(--muted);
-  background: #f1f4f2;
-}
-
-.daily-memo-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 9px;
-}
-
-.daily-memo-actions p {
-  min-height: 1.3em;
-  margin: 0;
-  color: var(--main-dark);
-  font-size: 0.88rem;
-}
-
-.daily-memo-actions button {
-  flex: 0 0 auto;
-}
-
-/* 検索画面 */
-
-.search-filter-card {
-  width: 100%;
-  margin-bottom: 18px;
-  padding: 14px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-sizing: border-box;
-}
-
-.search-period {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.search-filter-card > label {
-  margin: 0 0 7px;
-}
-
-.search-filter-card label[for="searchMood"] {
-  margin-top: 14px;
-}
-
-.search-filter-card input[type="search"],
-.search-filter-card select {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.search-filter-card select {
-  min-height: 44px;
-  padding: 10px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  font: inherit;
-}
-
-.search-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.search-result-item {
-  margin-bottom: 12px;
-  padding: 16px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-}
-
-@media screen and (max-width: 520px) {
-  .daily-memo-card,
-  .search-filter-card {
-    padding: 11px 8px;
-  }
-
-  .search-period {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-}
-
-.pending-plan {
-  border: 2px solid #d85050;
-  background: #fff3f2;
-}
-
-.pending-plan::before {
-  background: #d85050 !important;
-}
-
-.plan-badge {
-  color: #aa2929;
-  background: #ffe0de;
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-weight: 700;
-}
-
-.plan-list-item {
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #e4b5b2;
-  border-radius: 10px;
-  overflow-wrap: anywhere;
-}
-
-.plan-list-item p {
-  margin: 6px 0;
-}
-
-#planPage select,
-#completePanel select,
-#planTime,
-#completeTime {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: white;
-  font: inherit;
-  box-sizing: border-box;
-}
-
-.complete-activity {
-  margin: 8px 0 14px;
-  font-weight: 700;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-#planPage #planTime {
-  display: block !important;
-  width: calc(100% - 6px) !important;
-  max-width: calc(100% - 6px) !important;
-  min-width: 0 !important;
-  margin-right: auto !important;
-  margin-left: auto !important;
-  padding: 10px !important;
-  box-sizing: border-box !important;
-  text-align: center !important;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-#planPage #planTime::-webkit-date-and-time-value {
-  width: 100% !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: center !important;
-}
-
-#planPage label,
-#completePanel label {
-  display: block;
-  margin-top: 14px;
-}
-
-#completePanel {
+  flex-wrap: wrap;
   margin: 15px 0;
 }
 
-@media print {
-  #planPage,
-  #completePanel {
-    display: none !important;
-  }
+.toolbar button {
+  flex-shrink: 0;
 }
 
-/* 期間指定の1日1ページ印刷 */
-
-.app-header {
-  display: flex;
+.inline-check {
+  display: flex !important;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-}
-
-.header-print-button {
-  padding: 7px 12px;
-  border: 1px solid white;
-  border-radius: 8px;
-  background: white;
-  color: var(--main-dark);
-  font-weight: 700;
-}
-
-.print-dialog-card {
-  width: min(420px, calc(100vw - 28px));
-  padding: 22px;
-  background: white;
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-}
-
-.print-dialog-card label {
-  margin-top: 14px;
-}
-
-.print-dialog-card .form-actions {
-  margin-top: 16px;
-}
-
-#dailyPrintRoot {
-  display: none;
-}
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 8mm;
-  }
-
-  body.print-daily {
-    margin: 0;
-    min-width: 0;
-    background: white;
-  }
-
-  body.print-daily > .app-header,
-  body.print-daily > main,
-  body.print-daily > .bottom-nav,
-  body.print-daily > #printDialog {
-    display: none !important;
-  }
-
-  body.print-daily > #dailyPrintRoot {
-    display: block !important;
-  }
-
-  .daily-print-page {
-    display: grid;
-    grid-template-rows: 9mm 60mm minmax(0, 1fr) 29mm;
-    gap: 3mm;
-    width: 194mm;
-    height: 268mm;
-    margin: 0 auto;
-    overflow: hidden;
-    color: #151515;
-    background: white;
-    break-after: page;
-    page-break-after: always;
-    box-sizing: border-box;
-  }
-
-  .daily-print-page:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  .daily-print-page h1 {
-    margin: 0;
-    text-align: center;
-    font-size: 15pt;
-    font-weight: 500;
-    line-height: 9mm;
-  }
-
-  .daily-print-graph {
-    border: 1px solid #777;
-    padding: 2mm 4mm;
-    overflow: hidden;
-  }
-
-  .daily-print-graph h2 {
-    margin: 0;
-    text-align: center;
-    font-size: 11pt;
-    line-height: 5mm;
-  }
-
-  .daily-print-graph svg {
-    display: block;
-    width: 100%;
-    height: 49mm;
-  }
-
-  .daily-print-graph svg text {
-    fill: #333;
-    font-size: 12px;
-  }
-
-  .daily-print-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6mm;
-    min-height: 0;
-  }
-
-  .daily-print-column {
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid #777;
-    padding: 2mm 3mm;
-  }
-
-  .daily-print-column:first-child {
-    border-right: 1px solid #777;
-  }
-
-  .daily-print-list {
-    font-size: var(--daily-record-font, 8pt);
-    line-height: 1.15;
-  }
-
-  .daily-print-record {
-    padding: 0.8mm 0;
-    border-bottom: 1px solid #ccc;
-    break-inside: avoid;
-  }
-
-  .daily-print-record-heading {
-    display: flex;
-    justify-content: space-between;
-    gap: 2mm;
-  }
-
-  .daily-print-record p {
-    margin: 1mm 0 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-
-  .daily-print-empty {
-    color: #555;
-    text-align: center;
-  }
-
-  .daily-print-memo {
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid #777;
-    padding: 2mm 3mm;
-  }
-
-  .daily-print-memo h2 {
-    margin: 0 0 1mm;
-    text-align: center;
-    font-size: 11pt;
-  }
-
-  .daily-print-memo p {
-    margin: 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-size: 8pt;
-    line-height: 1.2;
-  }
-}
-
-/* ヘッダーとデータ移行 */
-
-.app-header {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0;
-  padding: 10px 12px;
-  text-align: center;
-}
-
-.app-header h1 {
-  min-width: 0;
-  font-size: clamp(1rem, 4vw, 1.35rem);
-  white-space: nowrap;
-  align-self: center;
-}
-
-.header-print-button,
-.header-transfer-button {
-  width: calc(100% - 6px);
-  min-width: 0;
-  margin: 0 auto;
-  padding: 8px 2px;
-  border: 1px solid white;
-  border-radius: 8px;
-  background: white;
-  color: var(--main-dark);
-  font-weight: 700;
-}
-
-.transfer-dialog-card {
-  position: relative;
-  width: min(460px, calc(100vw - 28px));
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
-  padding: 22px;
-  background: white;
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-}
-
-.transfer-dialog-card h2 {
-  padding-right: 28px;
-}
-
-.transfer-dialog-card p {
-  line-height: 1.6;
-}
-
-.transfer-close-button {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  font-size: 1.7rem;
-  line-height: 1;
-}
-
-@media print {
-  #transferDialog {
-    display: none !important;
-  }
-}
-
-
-/* お知らせポップアップ */
-
-.notice-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.notice-panel {
-  width: min(480px, 100%);
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 22px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-}
-
-.notice-panel > h2 {
-  margin: 0 0 18px;
-  text-align: center;
-  font-size: 1.3rem;
-}
-
-.notice-item {
-  padding: 15px 0;
-  border-top: 1px solid #ddd;
-}
-
-.notice-item h3 {
-  margin: 0 0 12px;
-  font-size: 1.05rem;
-}
-
-.notice-item p {
-  margin: 0 0 18px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.notice-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.notice-actions button {
-  min-height: 44px;
-  padding: 10px;
-  border-radius: 9px;
+  gap: 10px;
   font-weight: bold;
 }
 
-.notice-actions button:first-child {
-  color: #397c65;
-  background: #e9f5f0;
-  border: 1px solid #58a98a;
-}
-
-.notice-actions button:last-child {
-  color: white;
-  background: #58a98a;
-  border: 1px solid #58a98a;
+.inline-check input {
+  flex-shrink: 0;
 }
 
 
-/* =========================================
-   気分設定・入力方法
-========================================= */
+/* ========================================
+   服薬記録ボタン
+======================================== */
 
-/* 気分のタイトルと設定ボタン */
-.mood-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.mood-title-row legend {
-  margin: 0;
+#home .green h2 {
   padding: 0;
-  font-weight: 700;
+  text-align: center;
 }
 
-.mood-title-row .secondary-button {
-  flex: 0 0 auto;
-  min-height: 38px;
-  padding: 7px 12px;
-  font-size: 0.85rem;
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin: 25px auto;
+  max-width: 700px;
+  align-content: start;
 }
 
-/* 気分設定パネル */
-.mood-settings-panel {
-  margin-top: 16px;
+.slots button {
+  min-width: 0;
+  min-height: 75px;
+  background: #ffffff;
+  border: 1px solid #29a84b;
+  border-radius: 8px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.slots button:hover {
+  background: #f1faed;
+}
+
+.slots button.prn-slot {
+  border-color: #e59c37;
+  background: #fff9ec;
+}
+
+.slots button.prn-slot:hover {
+  background: #ffefce;
+}
+
+#slots:empty {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+
+/* ========================================
+   お薬一覧
+======================================== */
+
+.scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 18px;
+}
+
+table {
+  width: 100%;
+  min-width: 1150px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+th,
+td {
+  border: 1px solid #62a1e0;
+  padding: 10px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #ffffff;
+  font-weight: bold;
+}
+
+tbody tr:nth-child(odd) {
+  background: #d4e0f1;
+}
+
+tbody tr:nth-child(even) {
+  background: #eaf1fa;
+}
+
+td button {
+  padding: 6px 10px;
+  margin: 2px;
+  font-size: 13px;
+}
+
+.low-remaining {
+  color: var(--red);
+  font-weight: bold;
+}
+
+
+/* ========================================
+   現在のお薬・過去のお薬の切り替え
+======================================== */
+
+.drug-list-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 22px;
+}
+
+.drug-list-switch button {
+  width: 100%;
+  min-width: 0;
+  min-height: 55px;
+  padding: 12px 10px;
+  border: 2px solid #4778c7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #203457;
+  font-size: 17px;
+  font-weight: bold;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.drug-list-switch button.selected {
+  background: #4778c7;
+  color: #ffffff;
+  border-color: #4778c7;
+}
+
+.drug-list-switch button:not(.selected):hover {
+  background: #e3f0ff;
+}
+
+.drug-list-switch button:focus-visible {
+  outline: 3px solid #ffc000;
+  outline-offset: 3px;
+}
+
+#drugListHeading {
+  margin: 10px 0 18px;
+  text-align: center;
+  color: #4778c7;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* ========================================
+   お薬一覧の操作ボタン
+======================================== */
+
+#drugRows td:last-child button {
+  display: inline-block;
+  margin: 3px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#drugRows [data-edit] {
+  background: #e3f0ff;
+  border: 1px solid #4778c7;
+  color: #203457;
+}
+
+#drugRows .drug-past-button {
+  background: #fff2cc;
+  border: 1px solid #b58a37;
+  color: #654b19;
+}
+
+#drugRows .drug-past-button:hover {
+  background: #ffe6a3;
+}
+
+#drugRows [data-delete] {
+  background: #fce4e4;
+  border: 1px solid #c96b6b;
+  color: #a32828;
+}
+
+#drugRows [data-delete]:hover {
+  background: #f8caca;
+}
+
+/* ========================================
+   お薬登録フォーム
+======================================== */
+
+#drugForm {
+  display: grid;
+  gap: 12px;
+}
+
+#drugForm > label {
+  display: block;
+  font-weight: bold;
+}
+
+#drugForm > input:not([type="hidden"]),
+#drugForm > select {
+  width: 100%;
+  min-height: 45px;
+}
+
+#drugForm > .inline-check {
+  display: flex;
+}
+
+#drugForm button[type="submit"] {
+  min-height: 55px;
+  margin-top: 10px;
+}
+
+.hint {
+  color: #626262;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 5px 0 10px;
+}
+
+/* ========================================
+   定期薬・頓服薬の切り替え
+======================================== */
+
+.drug-type-fields {
+  display: grid;
+  gap: 12px;
   padding: 18px;
-  background: #f8fcfa;
-  border: 1px solid #b9d8cb;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #9bb6d5;
   border-radius: 14px;
 }
 
-.mood-settings-panel h3 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  color: var(--main-dark);
+.drug-type-fields h3 {
+  margin: 0 0 5px;
+  font-size: 20px;
+  color: var(--navy);
+  text-align: center;
 }
 
-/* 最小値・最大値・間隔 */
-.mood-setting-grid {
+.drug-type-fields label {
+  font-weight: bold;
+}
+
+.drug-type-fields > input {
+  width: 100%;
+  min-height: 45px;
+}
+
+#regularFields {
+  border-left: 5px solid var(--green-dark);
+}
+
+#prnFields {
+  border-left: 5px solid #e59c37;
+}
+
+/* ========================================
+   服薬タイミング入力欄
+======================================== */
+
+#timingFields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.mood-setting-grid label {
-  min-width: 0;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.mood-setting-grid input {
-  width: 100%;
-  min-width: 0;
-  margin-top: 7px;
-  padding: 10px 8px;
-  font-size: 1rem;
-}
-
-/* 入力方法の選択 */
-#moodMethod {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  margin-top: 8px;
-  padding: 10px 12px;
-  color: var(--text);
-  background: white;
-  border: 1.5px solid #b9c9c2;
-  border-radius: 9px;
-  font: inherit;
-}
-
-/* =========================================
-   ボタン形式
-========================================= */
-
-#moodButtons.mood-buttons {
-  display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(55px, 1fr)
-  );
+.timing-field {
+  display: flex;
+  align-items: center;
   gap: 8px;
   width: 100%;
 }
 
-#moodButtons.mood-buttons button {
-  min-height: 46px;
-  padding: 8px 5px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border-radius: 9px;
-  overflow-wrap: anywhere;
-}
-
-#moodButtons.mood-buttons button.selected {
-  color: white;
-  background: var(--main);
-  border-color: var(--main-dark);
-}
-
-/* =========================================
-   キーボード入力
-========================================= */
-
-#moodButtons .mood-number-input {
-  width: 100%;
-  min-height: 48px;
-  padding: 12px;
-  font-size: 1.1rem;
-  text-align: center;
-  border: 1.5px solid #b9c9c2;
-  border-radius: 9px;
-}
-
-#moodButtons .mood-number-input:focus {
-  border-color: var(--main);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(88,169,138,0.15);
-}
-
-/* =========================================
-   プルダウン形式
-========================================= */
-
-#moodButtons .mood-select {
-  width: 100%;
-  min-height: 48px;
-  padding: 10px 12px;
-  font-size: 1rem;
-  color: var(--text);
-  background: white;
-  border: 1.5px solid #b9c9c2;
-  border-radius: 9px;
-}
-
-/* =========================================
-   スライダー形式
-========================================= */
-
-#moodButtons .mood-slider-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 0;
-}
-
-#moodButtons .mood-slider {
-  width: 100%;
-  height: 10px;
-  accent-color: var(--main);
-  cursor: pointer;
-}
-
-#moodButtons .mood-slider-value {
-  font-size: 1.2rem;
-  font-weight: 700;
-  text-align: center;
-  color: var(--main-dark);
-}
-
-#moodButtons .mood-slider-range {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-/* =========================================
-   気分の説明・エラー
-========================================= */
-
-#moodGuide {
-  margin: 10px 0 0;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--muted);
-}
-
-#moodSettingsError {
-  margin: 12px 0 0;
-  min-height: 1.2em;
-  color: var(--danger);
-  font-size: 0.85rem;
-}
-
-/* =========================================
-   グラフの表示方式切り替え
-========================================= */
-
-#moodGraphMode {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  margin: 8px 0 12px;
-  padding: 10px 12px;
-  font: inherit;
-  color: var(--text);
-  background: white;
-  border: 1.5px solid #b9c9c2;
-  border-radius: 9px;
-}
-
-/* =========================================
-   検索画面の気分入力
-========================================= */
-
-#searchMood {
-  width: 100%;
-  min-height: 46px;
-  padding: 10px 12px;
-  font-size: 1rem;
-}
-
-/* =========================================
-   スマートフォン向け
-========================================= */
-
-@media (max-width: 480px) {
-  .mood-settings-panel {
-    padding: 14px;
-  }
-
-  .mood-setting-grid {
-    gap: 7px;
-  }
-
-  .mood-setting-grid input {
-    padding: 9px 6px;
-    font-size: 0.95rem;
-  }
-
-  #moodButtons.mood-buttons {
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(48px, 1fr)
-    );
-    gap: 6px;
-  }
-
-  #moodButtons.mood-buttons button {
-    min-height: 44px;
-    font-size: 0.9rem;
-  }
-}
-
-/* 印刷時は設定パネルを非表示 */
-@media print {
-  .mood-settings-panel,
-  .mood-title-row .secondary-button,
-  #moodGraphMode {
-    display: none !important;
-  }
-}
-
-/* 予定完了時の気分入力 */
-
-#completeMoodContainer {
-  margin-top: 10px;
-}
-
-#completeMoodContainer.mood-single-input {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-#completeMoodContainer.mood-single-input input,
-#completeMoodContainer.mood-single-input select {
+.timing-field input {
   flex: 1;
   min-width: 0;
+  min-height: 45px;
 }
 
-#completeMoodContainer output {
-  min-width: 50px;
-  font-weight: 700;
-  text-align: center;
+.timing-field button {
+  flex-shrink: 0;
+  padding: 10px 13px;
+  background: #fce4e4;
+  border-color: #d4a0a0;
 }
 
-/* =========================================
-   お知らせ
-========================================= */
-
-.notices-panel {
-  margin: 0 0 18px;
+.timing-field button:hover {
+  background: #f8d4d4;
 }
 
-.notice-item {
-  margin-bottom: 10px;
-  padding: 14px 16px;
-  background: #fff8e6;
-  border: 1px solid #e9d397;
-  border-left: 5px solid #d5a33d;
-  border-radius: 10px;
-}
-
-.notice-item h3 {
-  margin: 0 0 7px;
-  font-size: 1rem;
-  color: #805b16;
-}
-
-.notice-item p {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-@media print {
-  .notices-panel {
-    display: none !important;
-  }
-}
-
-/* =========================================
-   気分入力欄の拡大
-   プルダウン・キーボード・スライダー
-========================================= */
-
-/* 1つの入力欄を横幅いっぱいに表示 */
-#moodButtons.mood-single-input,
-#completeMoodContainer.mood-single-input {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+#prnCount,
+#prnTiming {
   width: 100%;
-  min-height: 64px;
+  min-height: 45px;
 }
 
-/* プルダウン・キーボード入力 */
-#moodButtons.mood-single-input input:not([type="range"]),
-#moodButtons.mood-single-input select,
-#completeMoodContainer.mood-single-input input:not([type="range"]),
-#completeMoodContainer.mood-single-input select {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  height: 56px;
-  padding: 10px 14px;
-  font-size: 20px;
-  border-radius: 12px;
-}
-
-/* スライダー本体 */
-#moodButtons input[type="range"],
-#completeMoodContainer input[type="range"] {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  height: 56px;
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  accent-color: #397c65;
-  cursor: pointer;
-  touch-action: pan-x;
-}
-
-/* スライダーのつまみ（Chrome・Safari・iPhone） */
-#moodButtons input[type="range"]::-webkit-slider-thumb,
-#completeMoodContainer input[type="range"]::-webkit-slider-thumb {
-  width: 32px;
-  height: 32px;
-}
-
-/* スライダーのつまみ（Firefox） */
-#moodButtons input[type="range"]::-moz-range-thumb,
-#completeMoodContainer input[type="range"]::-moz-range-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #397c65;
-  border: 2px solid white;
-}
-
-/* スライダーの数値表示 */
-#moodButtons output,
-#completeMoodContainer output {
-  flex: 0 0 72px;
-  min-width: 72px;
-  padding: 10px 4px;
-  font-size: 22px;
-  font-weight: 700;
-  text-align: center;
-  border-radius: 10px;
-  background: #e9f5f0;
-  color: #397c65;
+#prnTiming {
+  background: #fffdf6;
 }
 
 /* ========================================
-   共通設定画面
+   薬がなくなる日
 ======================================== */
 
-.app-settings-list {
+#endDateField {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
 }
 
-.app-settings-item {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 14px;
-  align-items: center;
-  gap: 10px;
+#endDateField label {
+  font-weight: bold;
+}
 
+#endDate {
   width: 100%;
-  min-height: 76px;
-  padding: 12px;
-
-  text-align: left;
-  color: var(--text);
-  background: #f7faf8;
-
-  border: 1px solid var(--border);
-  border-radius: 12px;
-
-  font-weight: 700;
+  min-height: 45px;
 }
 
-.app-settings-item small {
-  display: block;
-  margin-top: 4px;
+/* ========================================
+   残数入力欄
+======================================== */
 
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 400;
+.remaining-field {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  border-radius: 14px;
 }
 
-.app-settings-symbol {
-  font-size: 1.5rem;
-  color: var(--main-dark);
+.remaining-field label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #386c2b;
+}
+
+#remaining {
+  width: 100%;
+  min-height: 50px;
+  font-size: 22px;
+  font-weight: bold;
   text-align: center;
+  background: #ffffff;
 }
 
-.app-settings-card .form-actions {
-  flex-wrap: wrap;
+.remaining-field button {
+  width: 100%;
+  min-height: 45px;
 }
 
-.app-settings-card .form-actions button {
-  flex: 1 1 125px;
+/* ========================================
+   OCR画像選択
+======================================== */
+
+#drugImage {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
 }
 
-/* QRコード */
-.app-share-qr {
-  display: flex;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-.app-share-qr img {
-  width: min(220px, 100%);
-  aspect-ratio: 1;
+#preview {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 15px auto;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
   object-fit: contain;
 }
 
-/* 共通アプリ一覧の右下ボタンを隠す */
+#ocrButton {
+  display: block;
+  width: 100%;
+  margin-top: 15px;
+  padding: 14px;
+  background: #dcebd5;
+  border: 1px solid #8eb981;
+  border-radius: 10px;
+}
+
+#ocrButton:disabled {
+  opacity: 0.5;
+}
+
+#ocrStatus {
+  margin: 12px 0;
+  font-size: 14px;
+  color: #526b58;
+  white-space: pre-wrap;
+}
+
+#ocrResults {
+  margin-top: 20px;
+}
+
+#ocrResults > label {
+  display: block;
+  margin: 14px 0 6px;
+  font-weight: bold;
+}
+
+#ocrText {
+  width: 100%;
+  min-height: 200px;
+  line-height: 1.7;
+}
+
+#selectedOCRCount {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.ocr-drug-list {
+  display: grid;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.ocr-drug-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #8aa8ca;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.ocr-drug-item input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.ocr-drug-item span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ocr-drug-item:has(input:checked) {
+  background: #dcefd4;
+  border-color: #69a34d;
+}
+
+.ocr-drug-item:hover {
+  border-color: #4778c7;
+}
+
+/* ========================================
+   OCR一括登録の確認画面
+======================================== */
+
+#batchReview {
+  margin-top: 25px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid var(--navy);
+  border-radius: 15px;
+}
+
+#batchReview h3 {
+  text-align: center;
+  color: var(--blue-dark);
+  margin-bottom: 12px;
+}
+
+#batchReviewItems {
+  display: grid;
+  gap: 15px;
+}
+
+.batch-review-item {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid #9bb6d5;
+  border-radius: 12px;
+  background: #f5f9ff;
+}
+
+.batch-review-item h4 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.batch-review-item label {
+  display: grid;
+  gap: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.batch-review-item input,
+.batch-review-item select {
+  width: 100%;
+  min-height: 43px;
+}
+
+.batch-review-item .timing-field {
+  margin: 5px 0;
+}
+
+.batch-review-item .timing-field input {
+  min-height: 43px;
+}
+
+.batch-review-item .hint {
+  margin: 0;
+}
+
+.batch-review-item .warning {
+  color: #a63b24;
+  background: #fff2e9;
+  border: 1px solid #e6b5a3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.batch-review-item .remaining-preview {
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+#batchReview > .toolbar {
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+/* ========================================
+   服薬セット設定・履歴
+======================================== */
+
+#settingList,
+#historyList {
+  display: grid;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+#settingList > *,
+#historyList > * {
+  background: var(--green);
+  border: 1px solid var(--navy);
+  border-radius: 15px;
+  padding: 15px;
+}
+
+#settingList h3,
+#historyList h3 {
+  margin-top: 0;
+}
+
+#settingList p,
+#historyList p {
+  overflow-wrap: anywhere;
+}
+
+/* ========================================
+   メモ
+======================================== */
+
+#home .yellow textarea {
+  min-height: 180px;
+  margin-bottom: 15px;
+}
+
+.memoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin: 25px 0;
+}
+
+.memoCard {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--navy);
+  min-height: 250px;
+  padding: 18px 18px 65px;
+  overflow-wrap: anywhere;
+}
+
+.memoCard::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 49%,
+    #d2dbe9 50%,
+    #d2dbe9 100%
+  );
+  border-left: 1px solid var(--navy);
+  border-top: 1px solid var(--navy);
+}
+
+.memoCard .date {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.memoCard .content {
+  white-space: pre-wrap;
+}
+
+.memoCard .actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  max-width: calc(100% - 30px);
+}
+
+.memoCard .actions button {
+  border-radius: 0;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.memoCard .actions button:first-child {
+  background: #dbe5f5;
+  color: var(--blue-dark);
+}
+
+.memoCard .actions button:last-child {
+  background: #fce4d6;
+  color: #b00000;
+}
+
+/* ========================================
+   メモ表示期間
+======================================== */
+
+#filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+#filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-weight: bold;
+}
+
+#filter input {
+  width: 100%;
+}
+
+#filter button:first-of-type {
+  background: var(--green-dark);
+}
+
+#filter button:last-of-type {
+  background: #65a6d9;
+}
+
+/* ========================================
+   モーダル
+======================================== */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+}
+
+.dialog {
+  width: min(100%, 600px);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dialog h2 {
+  margin-top: 0;
+  text-align: center;
+}
+
+#modalBody {
+  display: grid;
+  gap: 12px;
+}
+
+#modalBody label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#modalBody input:not([type="checkbox"]),
+#modalBody select,
+#modalBody textarea {
+  width: 100%;
+}
+
+#modalBody .medicationItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f4f8f3;
+  border: 1px solid #bdd6b3;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#modalBody .medicationItem input {
+  flex-shrink: 0;
+}
+
+.dialog .toolbar {
+  justify-content: center;
+}
+
+/* ========================================
+   非表示
+======================================== */
+
+.hidden,
+.overlay.hidden,
+#filter.hidden {
+  display: none !important;
+}
+
+/* ========================================
+   メモ一覧：ドラッグして位置交換
+======================================== */
+
+#memoGrid .memoCard {
+  padding-top: 48px;
+}
+
+#memoGrid .memo-drag-handle {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: #edf2fa;
+  color: #203457;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+#memoGrid .memo-drag-handle:active {
+  cursor: grabbing;
+}
+
+#memoGrid .memo-dragging {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+#memoGrid .memo-drop-target {
+  outline: 3px solid #4778c7;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   メモの背景色選択
+======================================== */
+
+.memo-color-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 20px;
+}
+
+.memo-color-option {
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 2px;
+  border: 2px solid #cbd2da;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.memo-color-option.selected {
+  border: 3px solid #203457;
+  outline: 2px solid #8aa8ca;
+  outline-offset: 2px;
+}
+
+.memo-color-option:hover {
+  filter: brightness(0.97);
+}
+
+/* ========================================
+   新規メモの背景色選択
+======================================== */
+
+.memo-new-color {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.memo-new-color label {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.memo-new-color select {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  font-size: 14px;
+  background-color: #ffffff;
+}
+
+.memo-new-color select:has(option[value="yellow"]:checked) {
+  background-color: #fff5cc;
+}
+
+.memo-new-color select:has(option[value="green"]:checked) {
+  background-color: #e5f3df;
+}
+
+.memo-new-color select:has(option[value="blue"]:checked) {
+  background-color: #e3f0ff;
+}
+
+.memo-new-color select:has(option[value="pink"]:checked) {
+  background-color: #fce5ec;
+}
+
+/* ========================================
+   ホーム・メモ画面の入力欄を下部固定
+======================================== */
+
+#home.active,
+#memos.active {
+  padding-bottom: 250px;
+}
+
+#home.active > .panel.yellow,
+#memos.active > .panel.yellow {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 30px), 1070px);
+  margin: 0;
+  z-index: 100;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.12);
+  padding: 12px 18px;
+}
+
+#home.active > .panel.yellow h2,
+#memos.active > .panel.yellow h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+#home.active > .panel.yellow textarea,
+#memos.active > .panel.yellow textarea {
+  display: block;
+  width: 100%;
+  height: 85px;
+  min-height: 85px;
+  max-height: 140px;
+  margin-bottom: 8px;
+  resize: vertical;
+}
+
+#home.active > .panel.yellow button,
+#memos.active > .panel.yellow button {
+  min-height: 40px;
+}
+
+/* ========================================
+   OCR認識文字欄の非表示
+======================================== */
+
+#ocrText,
+label[for="ocrText"] {
+  display: none !important;
+}
+
+/* ========================================
+   タブレット
+======================================== */
+
+@media screen and (max-width: 800px) {
+
+  .panel {
+    padding: 20px;
+  }
+
+  .slots {
+    gap: 10px;
+  }
+
+  .slots button {
+    font-size: 18px;
+  }
+
+}
+
+/* ========================================
+   スマートフォン
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+  #app {
+    padding: 10px;
+  }
+
+  .panel {
+    padding: 18px 12px;
+    border-radius: 28px;
+  }
+
+  .page h1 {
+    font-size: 30px;
+  }
+
+  .page h2 {
+    font-size: 23px;
+  }
+
+  #home header {
+    margin-bottom: 25px;
+  }
+
+  #clock {
+    font-size: 32px;
+  }
+
+  .slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .slots button {
+    min-height: 65px;
+    padding: 8px 3px;
+    font-size: 16px;
+  }
+
+  .two {
+    gap: 8px;
+  }
+
+  .two button {
+    padding: 10px 5px;
+    font-size: 14px;
+  }
+
+  #drugForm {
+    gap: 10px;
+  }
+
+  #drugForm > input:not([type="hidden"]),
+  #drugForm > select {
+    font-size: 16px;
+  }
+
+  .drug-type-fields {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .drug-type-fields h3 {
+    font-size: 18px;
+  }
+
+  .remaining-field {
+    padding: 12px;
+  }
+
+  #remaining {
+    font-size: 20px;
+  }
+
+  #ocrText {
+    font-size: 16px;
+  }
+
+  .ocr-drug-item {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  #batchReview {
+    padding: 12px;
+  }
+
+  .batch-review-item {
+    padding: 10px;
+  }
+
+  .timing-field {
+    gap: 6px;
+  }
+
+  .timing-field button {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .memoGrid {
+    gap: 10px;
+  }
+
+  .memoCard {
+    min-height: 220px;
+    padding: 10px 10px 60px;
+    font-size: 13px;
+  }
+
+  .memoCard .actions button {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  #filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  #filter button {
+    font-size: 13px;
+    padding: 10px 4px;
+  }
+
+  .dialog {
+    padding: 18px;
+  }
+
+  .drug-list-switch {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .drug-list-switch button {
+    min-height: 50px;
+    padding: 10px 5px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  #drugListHeading {
+    font-size: 20px;
+    margin: 8px 0 14px;
+  }
+
+  #drugRows td:last-child button {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .memo-color-picker {
+    gap: 5px;
+  }
+
+  .memo-color-option {
+    font-size: 11px;
+    min-height: 45px;
+  }
+
+  .memo-new-color {
+    gap: 8px;
+    margin: 5px 0 8px;
+  }
+
+  .memo-new-color label {
+    font-size: 12px;
+  }
+
+  .memo-new-color select {
+    min-height: 38px;
+    font-size: 13px;
+  }
+
+  #home.active,
+  #memos.active {
+    padding-bottom: 230px;
+  }
+
+  #home.active > .panel.yellow,
+  #memos.active > .panel.yellow {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  #home.active > .panel.yellow textarea,
+  #memos.active > .panel.yellow textarea {
+    height: 75px;
+    min-height: 75px;
+  }
+
+  #home.active > .panel.yellow h2,
+  #memos.active > .panel.yellow h2 {
+    font-size: 18px;
+  }
+
+}
+
+/* ========================================
+   小さいスマートフォン
+======================================== */
+
+@media screen and (max-width: 360px) {
+
+  #app {
+    padding: 6px;
+  }
+
+  .slots {
+    gap: 5px;
+  }
+
+  .slots button {
+    font-size: 14px;
+  }
+
+  .memoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .memoCard {
+    min-height: 180px;
+  }
+
+  .toolbar {
+    gap: 6px;
+  }
+
+  .toolbar button {
+    padding: 9px;
+    font-size: 12px;
+  }
+
+}
+
+/* ========================================
+   印刷
+======================================== */
+
+@media print {
+
+  body {
+    background: #ffffff;
+  }
+
+  #app {
+    max-width: none;
+    padding: 0;
+  }
+
+  .panel,
+  .memoCard {
+    break-inside: avoid;
+  }
+
+  button {
+    display: none !important;
+  }
+
+  .overlay {
+    display: none !important;
+  }
+
+  .scroll {
+    overflow: visible;
+  }
+
+  #home.active > .panel.yellow,
+  #memos.active > .panel.yellow {
+    position: static;
+    transform: none;
+    width: 100%;
+    box-shadow: none;
+  }
+
+}
+
+/* ========================================
+   処方日入力・登録確認画面
+======================================== */
+
+/* 処方日の入力欄 */
+#prescriptionDateInput,
+#batchPrescriptionDate {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #203457;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* 処方日の入力ボックス */
+.prescription-date-box {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  background: #f5f9ff;
+  border: 1px solid #9bb6d5;
+  border-radius: 12px;
+}
+
+.prescription-date-box label {
+  font-weight: bold;
+}
+
+/* 登録内容の確認画面 */
+.registration-review {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #9bb6d5;
+  border-radius: 14px;
+}
+
+/* 薬剤ごとの確認欄 */
+.registration-review-item {
+  padding: 15px;
+  background: #f5f9ff;
+  border: 1px solid #9bb6d5;
+  border-radius: 10px;
+}
+
+.registration-review-item h3 {
+  margin: 0 0 12px;
+  color: #192e52;
+}
+
+/* 処方日・薬がなくなる日の表示 */
+.registration-date-info {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #e7f3e1;
+  border: 1px solid #8fbd7e;
+  border-radius: 8px;
+}
+
+/* 登録確定・キャンセルボタン */
+.registration-review-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.registration-review-actions button {
+  min-height: 48px;
+  padding: 12px 20px;
+}
+
+/* スマートフォン */
+@media screen and (max-width: 600px) {
+
+  .prescription-date-box,
+  .registration-review {
+    padding: 12px;
+  }
+
+  .registration-review-item {
+    padding: 12px;
+  }
+
+  .registration-review-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registration-review-actions button {
+    min-width: 0;
+    padding: 10px 6px;
+    font-size: 14px;
+  }
+}
+
+/* ========================================
+   薬剤名の詳細ページリンク
+======================================== */
+
+.drug-detail-link {
+  color: #1765b3;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drug-detail-link:hover {
+  color: #0a4079;
+}
+
+.drug-detail-link:focus-visible {
+  outline: 2px solid #1765b3;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ========================================
+   学習クイズ
+======================================== */
+
+.clock-token-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 4vw, 36px);
+}
+
+.clock-token-row #clock {
+  min-width: 0;
+}
+
+.token-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.token-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.token-switch {
+  width: 54px;
+  height: 30px;
+  background: #a4acb6;
+  border-radius: 20px;
+  position: relative;
+  transition: background .15s;
+}
+
+.token-switch:before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  transition: transform .15s;
+}
+
+.token-toggle input:checked + .token-switch {
+  background: #438b63;
+}
+
+.token-toggle input:checked + .token-switch:before {
+  transform: translateX(24px);
+}
+
+.token-toggle input:focus-visible + .token-switch {
+  outline: 3px solid #ffc000;
+  outline-offset: 3px;
+}
+
+.token-panel {
+  background: #eef4fc;
+  border: 1px solid #a9c2e4;
+}
+
+.token-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.token-masked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 18px 0;
+  padding: 14px 9px;
+  background: white;
+  border-radius: 10px;
+  min-height: 95px;
+  align-content: flex-start;
+}
+
+.token-char {
+  width: clamp(18px, 5vw, 24px);
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.token-char.closed {
+  background: #202020;
+  color: #202020;
+}
+
+.token-char.open {
+  background: transparent;
+  color: #111;
+}
+
+#tokenAnswerArea {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#tokenAnswerArea input {
+  width: 100%;
+  font-size: 16px;
+}
+
+#tokenAnswerFeedback {
+  min-height: 1.5em;
+}
+
+#tokenSolution {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 18px;
+}
+
+#tokenFullQuestion {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .clock-token-row {
+    justify-content: space-between;
+  }
+
+  .token-panel {
+    padding: 16px 12px;
+  }
+
+  .token-toggle {
+    font-size: 12px;
+  }
+}
+
+@media print {
+  #tokenHome,
+  #quiz,
+  .token-toggle {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   スマホ版：日付入力欄のはみ出し防止
+======================================== */
+
+input[type="date"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+
+  input[type="date"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .form-row,
+  .date-row,
+  .date-range,
+  .form-group {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .form-row > *,
+  .date-row > *,
+  .date-range > *,
+  .form-group > * {
+    min-width: 0;
+  }
+}
+
+/* ========================================
+   日付入力欄のはみ出し修正
+======================================== */
+
+#filter {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#filter > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#filter input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* 処方日入力：モーダル */
+.dialog {
+  min-width: 0;
+  max-width: calc(100vw - 30px);
+  box-sizing: border-box;
+}
+
+#modalBody {
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#modalBody > *,
+.prescription-date-box,
+.registration-review,
+.registration-review-item {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#prescriptionDateInput,
+#batchPrescriptionDate,
+#modalBody input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+@media screen and (max-width: 600px) {
+
+  #filter,
+  #modalBody,
+  .prescription-date-box,
+  .registration-review {
+    min-width: 0;
+  }
+
+  #filter input[type="date"],
+  #modalBody input[type="date"] {
+    font-size: 16px;
+    padding: 8px 4px;
+  }
+
+  .dialog {
+    width: 100%;
+    padding: 14px;
+  }
+}
+
+/* ========================================
+   メモ見出しと背景色選択を横並び
+======================================== */
+
+.memo-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.memo-heading-row h2 {
+  margin: 0 !important;
+  flex: 0 0 auto;
+}
+
+.memo-heading-row .memo-new-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.memo-heading-row .memo-new-color label {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.memo-heading-row .memo-new-color select {
+  width: auto;
+  min-width: 0;
+  max-width: 135px;
+  margin: 0;
+  padding: 6px;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+
+  .memo-heading-row {
+    gap: 6px;
+  }
+
+  .memo-heading-row .memo-new-color {
+    gap: 5px;
+  }
+
+  .memo-heading-row .memo-new-color label {
+    font-size: 12px;
+  }
+
+  .memo-heading-row .memo-new-color select {
+    max-width: 115px;
+    padding: 5px 3px;
+    font-size: 12px;
+  }
+}
+
+/* ========================================
+   グラスモーフィズム時計
+======================================== */
+
+#home header.glass-clock-header {
+  width: min(100%, 460px);
+  margin: 8px auto 14px;
+  padding: 8px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    #dce9fa 0%,
+    #e9f5ff 55%,
+    #d7e5fa 100%
+  );
+  box-shadow: 0 5px 18px rgba(48, 91, 151, 0.12);
+}
+
+#home header.glass-clock-header::before {
+  content: none;
+  display: none;
+}
+
+#home .glass-clock-header .clock-token-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ガラス風カード */
+#home #clock.glass-clock {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.48);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 3px 12px rgba(48, 91, 151, 0.08);
+  color: #345e9e;
+  text-align: center;
+  text-shadow: none;
+  white-space: normal;
+  letter-spacing: normal;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.glass-clock-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #6685b4;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.clock-icon {
+  font-size: 16px;
+  line-height: 1;
+  color: #e6a34d;
+}
+
+.glass-clock-time {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  margin: 2px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+#clockHourMinute {
+  font-size: clamp(30px, 7vw, 39px);
+  font-weight: 750;
+  line-height: 1.1;
+  color: #345e9e;
+  letter-spacing: 1px;
+}
+
+#clockSeconds {
+  font-size: 15px;
+  font-weight: 600;
+  color: #7295c8;
+}
+
+.glass-clock-date {
+  color: #6685b4;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#home .glass-clock-header .token-toggle {
+  flex: 0 0 auto;
+  min-width: 55px;
+  color: #345e9e;
+}
+
+@media screen and (max-width: 600px) {
+
+  #home header.glass-clock-header {
+    width: 100%;
+    padding: 7px;
+    margin: 4px auto 12px;
+    border-radius: 16px;
+  }
+
+  #home #clock.glass-clock {
+    padding: 8px 7px;
+    border-radius: 12px;
+  }
+
+  #clockHourMinute {
+    font-size: 31px;
+  }
+
+  #clockSeconds {
+    font-size: 13px;
+  }
+
+  .glass-clock-date {
+    font-size: 10px;
+  }
+
+  #home .glass-clock-header .token-toggle {
+    min-width: 54px;
+    font-size: 11px;
+  }
+}
+
+/* ========================================
+   ヘッダーを 2/3 + 1/3 に分割
+======================================== */
+
+#home header.home-top-header {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 10px;
+  width: min(100%, 600px);
+  margin: 8px auto 14px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  align-items: stretch;
+}
+
+#home header.home-top-header::before {
+  content: none;
+  display: none;
+}
+
+/* 左 2/3：時計 */
+#home .header-clock-area {
+  min-width: 0;
+  display: flex;
+}
+
+#home .header-clock-area .glass-clock-header {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 7px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    #dce9fa,
+    #e9f5ff 55%,
+    #d7e5fa
+  );
+}
+
+#home .header-clock-area #clock.glass-clock {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 右 1/3：クイズ */
+#home .header-quiz-area {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 16px;
+  background: #f2f6fc;
+  border: 1px solid #dce6f4;
+}
+
+#home .header-quiz-area .token-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  width: 100%;
+  color: #345e9e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* スマホも2:1を維持 */
+@media screen and (max-width: 600px) {
+  #home header.home-top-header {
+    width: 100%;
+    gap: 7px;
+    margin: 4px auto 12px;
+  }
+
+  #home .header-clock-area .glass-clock-header {
+    padding: 5px;
+    border-radius: 13px;
+  }
+
+  #home .header-clock-area #clock.glass-clock {
+    padding: 7px 3px;
+  }
+
+  #home #clockHourMinute {
+    font-size: clamp(22px, 6vw, 31px);
+  }
+
+  #home #clockSeconds {
+    font-size: 12px;
+  }
+
+  #home .glass-clock-date {
+    font-size: 9px;
+  }
+
+  #home .header-quiz-area {
+    padding: 6px 2px;
+    border-radius: 13px;
+  }
+
+  #home .header-quiz-area .token-toggle {
+    gap: 8px;
+    font-size: 12px;
+  }
+}
+
+/* ========================================
+   服薬記録：見出しは中央、ボタンは右
+======================================== */
+
+.medication-record-heading {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.medication-record-heading h2 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 20px !important;
+  font-weight: 700;
+}
+
+.medication-record-heading button {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.medication-management-title {
+  font-size: 20px !important;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+/* アイコン */
+.medication-button-icon {
+  display: inline-block;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.medication-button-icon + span {
+  vertical-align: middle;
+}
+
+.med-pop-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 21px;
+  line-height: 1;
+  margin-right: 7px;
+  vertical-align: middle;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.10);
+}
+
+.register-icon {
+  background: #baf2d0;
+  border: 1px solid #87dfac;
+}
+
+.confirm-icon {
+  background: #c8dcff;
+  border: 1px solid #a3c2ff;
+}
+
+@media screen and (max-width: 600px) {
+  .medication-record-heading h2,
+  .medication-management-title {
+    font-size: 18px !important;
+  }
+
+  .medication-button-icon {
+    font-size: 19px;
+  }
+
+  .med-pop-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 19px;
+    margin-right: 5px;
+  }
+}
+
+/* ========================================
+   服薬記録一覧：タイトルとホームボタン
+======================================== */
+
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#history .history-page-heading h1 {
+  grid-column: 2;
+  margin: 0;
+  text-align: center;
+}
+
+#history .history-page-heading button {
+  grid-column: 3;
+  justify-self: end;
+  padding: 9px 12px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+/* ========================================
+   服薬記録一覧：検索欄
+======================================== */
+
+.history-search-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  background: #e2efd9;
+  border-radius: 16px;
+}
+
+#history .history-search-panel h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #386c2b;
+}
+
+.history-search-panel label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-weight: bold;
+}
+
+.history-search-panel input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 16px;
+}
+
+.history-search-dates,
+.history-search-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.history-search-actions button {
+  min-width: 0;
+}
+
+.history-search-count {
+  margin: 0;
+  text-align: right;
+  font-weight: bold;
+  color: #386c2b;
+}
+
+/* ========================================
+   お薬の管理：検索欄
+======================================== */
+
+#drugs .drug-search-panel {
+  margin: 0 0 20px;
+  background: #edf5ff;
+}
+
+#drugs .drug-search-panel h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #326db4;
+}
+
+#drugs .drug-search-panel .history-search-count {
+  color: #326db4;
+}
+
+/* ========================================
+   スマートフォン対応
+======================================== */
+
+@media screen and (max-width: 600px) {
+  #history .history-page-heading {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  #history .history-page-heading h1 {
+    font-size: clamp(17px, 5vw, 23px);
+    white-space: nowrap;
+  }
+
+  #history .history-page-heading button {
+    font-size: 16px;
+    min-height: 44px;
+    padding: 8px 6px;
+  }
+
+  .history-search-panel {
+    padding: 12px;
+  }
+
+  .history-search-dates {
+    gap: 8px;
+  }
+
+  .history-search-panel input {
+    padding: 9px 5px;
+  }
+
+  #drugs .drug-search-panel {
+    padding: 12px;
+  }
+
+  #drugs .drug-search-panel input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #history h1,
+  #history h2,
+  #historyPage h1,
+  #historyPage h2 {
+    font-size: 24px;
+    line-height: 1.4;
+  }
+
+  #history button,
+  #historyPage button {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  input[type="date"] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #historySearchForm,
+  #drugSearchForm {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #historySearchForm *,
+  #drugSearchForm * {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+}
+
+/* ========================================
+   スマホ版：服薬記録・お薬の確認
+   日付入力欄の横幅調整
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+  /* 服薬記録・お薬の確認の日付欄 */
+  #history .history-search-dates input[type="date"],
+  #drugs .history-search-dates input[type="date"],
+  #historySearchForm input[type="date"],
+  #drugSearchForm input[type="date"] {
+    display: block;
+    box-sizing: border-box;
+    width: 90%;
+    max-width: 90%;
+    min-width: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 8px 2px;
+    font-size: 16px;
+  }
+
+  /* 日付欄を入れる枠 */
+  #history .history-search-dates,
+  #drugs .history-search-dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #history .history-search-dates > *,
+  #drugs .history-search-dates > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* ========================================
+   クイズ・服薬記録一覧の見出し統一
+======================================== */
+
+#quiz .quiz-page-heading,
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 10px 0 25px;
+}
+
+/* タイトルを中央に配置 */
+#quiz .quiz-page-heading h1,
+#history .history-page-heading h1 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(28px, 5vw, 48px);
+  white-space: nowrap;
+}
+
+/* ホームへボタンを右側に配置 */
+#quiz .quiz-page-heading button,
+#history .history-page-heading button {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  width: auto;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 600px) {
+
+  #quiz .quiz-page-heading,
+  #history .history-page-heading {
+    gap: 4px;
+  }
+
+  #quiz .quiz-page-heading h1,
+  #history .history-page-heading h1 {
+    font-size: clamp(21px, 5.5vw, 28px);
+  }
+
+  #quiz .quiz-page-heading button,
+  #history .history-page-heading button {
+    padding: 8px 5px;
+    min-height: 40px;
+    font-size: 11px;
+  }
+}
+
+/* ========================================
+   追加機能
+   今日は何の日・データ移行・アプリ共有
+======================================== */
+
+/* 今日は何の日：表示エリア */
+.today-message {
+  width: 100%;
+  margin: 8px 0 18px;
+  padding: 14px 12px;
+  border: 1px solid #8fbd7e;
+  border-radius: 14px;
+  background: #e7f3e1;
+  color: #386c2b;
+  text-align: center;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* オフの場合は非表示 */
+.today-message[hidden] {
+  display: none !important;
+}
+
+/* 今日は何の日：切り替えスイッチ */
+#home .header-quiz-area .token-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  color: #345e9e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* データ移行・アプリ共有：横並び */
+.home-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  width: 100%;
+  margin: 14px 0 18px;
+}
+
+.home-tools button {
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  padding: 12px 8px;
+  border: 1px solid #4778c7;
+  border-radius: 10px;
+  background: #f1f6fc;
+  color: #203457;
+  font-size: 16px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.home-tools button:hover {
+  background: #e3f0ff;
+}
+
+/* アプリ共有：QRコード */
+.share-qr {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  margin: 12px auto;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+/* モーダル内のURL表示 */
+#modalBody input[type="text"],
+#modalBody input[type="url"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* スマートフォン対応 */
+@media screen and (max-width: 600px) {
+
+  .today-message {
+    padding: 12px 10px;
+    margin: 6px 0 14px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  #home .header-quiz-area .token-toggle {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .home-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0 16px;
+  }
+
+  .home-tools button {
+    min-height: 52px;
+    padding: 10px 5px;
+    font-size: 14px;
+  }
+
+  .share-qr {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* クイズの背景色を淡い紫色に変更 */
+.token-panel {
+  background: #f0e5fa;
+  border: 1px solid #d7b9ed;
+  border-radius: 25px;
+}
+
+/* クイズのタイトル・文字色 */
+.token-panel h2,
+.token-panel .token-summary strong {
+  color: #7448a0;
+}
+
+/* クイズのボタン */
+.token-panel button {
+  border-color: #b995d5;
+}
+
+
+/* 服薬記録一覧ページのタイトル */
+#history .history-page-heading h1 {
+  font-size: clamp(32px, 5vw, 52px);
+}
+
+/* 服薬記録一覧ページの「ホームへ」ボタン */
+#history .history-page-heading button {
+  font-size: 18px;
+  min-height: 54px;
+  padding: 12px 22px;
+}
+
+/* 服薬記録一覧ページのタイトル */
+#history .history-page-heading h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ========================================
+   服薬記録一覧の見出し配置を修正
+======================================== */
+
+#history .history-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#history .history-page-heading h1 {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: center;
+  min-width: 0;
+  margin: 0;
+}
+
+#history .history-page-heading button {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+
+/* スマートフォンでも同じ配置 */
+@media screen and (max-width: 600px) {
+  #history .history-page-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+/* OCRで認識した文字列を確認できるようにする */
+#ocrText,
+label[for="ocrText"] {
+  display: block !important;
+}
+
+#ocrText {
+  width: 100%;
+  min-height: 200px;
+  font-size: 14px;
+}
+
+/* 服薬記録一覧 */
+
+.history-record-card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* 1行目：服薬日時 */
+.history-record-date {
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+/* 2行目：薬剤名と取り消し */
+.history-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* 薬剤名 */
+.history-record-name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+/* 取り消しボタン */
+.history-record-cancel {
+  flex-shrink: 0;
+  width: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* =====================================
+   ほかのアプリを探す
+===================================== */
+
+#otherAppsSection {
+  width: 100%;
+  padding: 20px 16px 30px;
+  text-align: center;
+}
+
+#openOtherAppsButton {
+  width: 100%;
+  max-width: 500px;
+  min-height: 48px;
+
+  padding: 12px 16px;
+
+  background: #f0f7f3;
+  color: #276b55;
+
+  border: 1px solid #9fcbb5;
+  border-radius: 12px;
+
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#openOtherAppsButton:active {
+  background: #dceee4;
+}
+
+/* 共通メニューの右下固定ボタンは非表示 */
 #shared-app-menu-button {
   display: none !important;
 }
 
-/* 印刷時は設定画面を表示しない */
 @media print {
-  #appSettingsDialog,
-  #appShareDialog,
+  #otherAppsSection,
   #shared-app-menu-root {
     display: none !important;
   }
