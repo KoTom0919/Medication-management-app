@@ -4296,19 +4296,24 @@ async function loadNotices() {
    ほかのアプリを探す
 ===================================== */
 
-document.getElementById("openOtherAppsButton")
-  .addEventListener("click", () => {
+/* =====================================
+   ほかのアプリを探す
+===================================== */
 
+document.addEventListener("DOMContentLoaded", () => {
+  const button = document.getElementById("openOtherAppsButton");
+
+  if (!button) return;
+
+  button.addEventListener("click", () => {
     const menuButton =
       document.getElementById("shared-app-menu-button");
 
     if (!menuButton) {
-      alert(
-        "アプリ一覧を読み込めませんでした。" +
-        "通信状態を確認してください。"
-      );
+      alert("アプリ一覧を読み込めませんでした。");
       return;
     }
 
     menuButton.click();
   });
+});

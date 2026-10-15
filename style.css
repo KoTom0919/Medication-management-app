@@ -2884,3 +2884,8 @@ label[for="ocrText"] {
     display: none !important;
   }
 }
+
+#home #otherAppsSection {
+  margin: 16px auto 0;
+  padding: 0 0 12px;
+}
