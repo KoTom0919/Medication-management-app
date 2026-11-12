@@ -4296,24 +4296,11 @@ async function loadNotices() {
    ほかのアプリを探す
 ===================================== */
 
-/* =====================================
-   ほかのアプリを探す
-===================================== */
-
 document.addEventListener("DOMContentLoaded", () => {
   const button = document.getElementById("openOtherAppsButton");
-
   if (!button) return;
 
   button.addEventListener("click", () => {
-    const menuButton =
-      document.getElementById("shared-app-menu-button");
-
-    if (!menuButton) {
-      alert("アプリ一覧を読み込めませんでした。");
-      return;
-    }
-
-    menuButton.click();
+    window.location.assign("https://kotom0919.github.io/App-menu/");
   });
 });
